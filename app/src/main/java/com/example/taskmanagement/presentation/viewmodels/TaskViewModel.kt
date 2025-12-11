@@ -3,6 +3,7 @@ package com.example.taskmanagement.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.taskmanagement.data.entities.TaskEntity
+import com.example.taskmanagement.data.entities.TaskFullInfo
 import com.example.taskmanagement.domain.repository.TaskRepository
 import com.example.taskmanagement.domain.repository.TaskStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -136,6 +137,10 @@ class TaskViewModel @Inject constructor(
                 kotlinx.coroutines.delay(5000)
             }
         }.flowOn(kotlinx.coroutines.Dispatchers.IO)
+    }
+
+    suspend fun getTaskFullInfo(taskId: Long): TaskFullInfo? {
+        return taskRepository.getTaskFullInfo(taskId)
     }
 }
 

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <!-- Авторизация -->
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.taskmanagement.presentation.fragments.LoginFragment"
+        android:label="Вход"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_loginFragment_to_taskListFragment"
+            app:destination="@id/taskListFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Основные экраны -->
+    <fragment
+        android:id="@+id/taskListFragment"
+        android:name="com.example.taskmanagement.presentation.fragments.TaskListFragment"
+        android:label="Задачи"
+        tools:layout="@layout/fragment_task_list">
+        <action
+            android:id="@+id/action_taskListFragment_to_createTaskFragment"
+            app:destination="@id/createTaskFragment" />
+        <action
+            android:id="@+id/action_taskListFragment_to_taskDetailFragment"
+            app:destination="@id/taskDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/userListFragment"
+        android:name="com.example.taskmanagement.presentation.fragments.UserListFragment"
+        android:label="Пользователи"
+        tools:layout="@layout/fragment_user_list">
+        <action
+            android:id="@+id/action_userListFragment_to_createUserFragment"
+            app:destination="@id/createUserFragment" />
+        <action
+            android:id="@+id/action_userListFragment_to_userDetailFragment"
+            app:destination="@id/userDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.taskmanagement.presentation.fragments.ProfileFragment"
+        android:label="Профиль"
+        tools:layout="@layout/fragment_profile" />
+
+    <!-- Детали и создание -->
+    <fragment
+        android:id="@+id/taskDetailFragment"
+        android:name="com.example.taskmanagement.presentation.fragments.TaskDetailFragment"
+        android:label="Детали задачи"
+        tools:layout="@layout/fragment_task_detail" />
+
+    <fragment
+        android:id="@+id/createTaskFragment"
+        android:name="com.example.taskmanagement.presentation.fragments.CreateTaskFragment"
+        android:label="Новая задача"
+        tools:layout="@layout/fragment_create_task" />
+
+    <fragment
+        android:id="@+id/userDetailFragment"
+        android:name="com.example.taskmanagement.presentation.fragments.UserDetailFragment"
+        android:label="Детали пользователя"
+        tools:layout="@layout/fragment_user_detail" />
+
+    <fragment
+        android:id="@+id/createUserFragment"
+        android:name="com.example.taskmanagement.presentation.fragments.CreateUserFragment"
+        android:label="Новый пользователь"
+        tools:layout="@layout/fragment_create_user" />
+
+</navigation>

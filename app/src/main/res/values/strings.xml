@@ -1,3 +1,37 @@
 <resources>
     <string name="app_name">TaskManagement</string>
+    <string name="delete">Удалить</string>
+    <string name="add">Добавить</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="edit">Редактировать</string>
+    <string name="tasks">Задачи</string>
+    <string name="users">Пользователи</string>
+    <string name="profile">Профиль</string>
+    <string name="login">Вход</string>
+    <string name="logout">Выход</string>
+    <string name="email">Email</string>
+    <string name="password">Пароль</string>
+    <string name="username">Имя пользователя</string>
+    <string name="first_name">Имя</string>
+    <string name="last_name">Фамилия</string>
+    <string name="role">Роль</string>
+    <string name="admin">Администратор</string>
+    <string name="user">Пользователь</string>
+    <string name="title">Название</string>
+    <string name="description">Описание</string>
+    <string name="priority">Приоритет</string>
+    <string name="due_date">Срок выполнения</string>
+    <string name="category">Категория</string>
+    <string name="assign_to">Назначить</string>
+    <string name="status">Статус</string>
+    <string name="completed">Выполнено</string>
+    <string name="pending">В ожидании</string>
+    <string name="low">Низкий</string>
+    <string name="medium">Средний</string>
+    <string name="high">Высокий</string>
+    <string name="create_task">Создать задачу</string>
+    <string name="create_user">Создать пользователя</string>
+    <string name="edit_task">Редактировать задачу</string>
+    <string name="edit_user">Редактировать пользователя</string>
 </resources>
