@@ -8,6 +8,9 @@ interface TaskRepository {
     fun getAllTasks(): Flow<List<TaskEntity>>
     fun getAllTasksFullInfo(): Flow<List<TaskFullInfo>>
     fun getTasksByCategory(categoryId: Long): Flow<List<TaskEntity>>
+    fun getTasksByCompletion(isCompleted: Boolean): Flow<List<TaskEntity>>
+
+    fun getTasksByPriority(priority: TaskEntity.Priority): Flow<List<TaskEntity>>
     fun getUserRelatedTasks(userId: Long): Flow<List<TaskFullInfo>>
     fun getTasksAssignedToUser(userId: Long): Flow<List<TaskEntity>>
     suspend fun getTaskFullInfo(taskId: Long): TaskFullInfo?

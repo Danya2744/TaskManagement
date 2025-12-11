@@ -24,6 +24,14 @@ class TaskRepositoryImpl @Inject constructor(
         return taskDao.getTasksByCategory(categoryId)
     }
 
+    override fun getTasksByPriority(priority: TaskEntity.Priority): Flow<List<TaskEntity>> {
+        return taskDao.getTasksByPriority(priority)
+    }
+
+    override fun getTasksByCompletion(isCompleted: Boolean): Flow<List<TaskEntity>> {
+        return taskDao.getTasksByCompletion(isCompleted)
+    }
+
     override fun getUserRelatedTasks(userId: Long): Flow<List<TaskFullInfo>> {
         return taskDao.getUserRelatedTasks(userId)
     }
