@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.example.taskmanagement.R
 import com.example.taskmanagement.presentation.viewmodels.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 class ProfileFragment : Fragment() {
 
     private val viewModel: UserViewModel by viewModels()
+
     private lateinit var tvName: TextView
     private lateinit var tvEmail: TextView
     private lateinit var tvRole: TextView
@@ -60,14 +62,10 @@ class ProfileFragment : Fragment() {
                         com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN -> "Администратор"
                         com.example.taskmanagement.data.entities.UserEntity.Role.USER -> "Пользователь"
                     }
+
                     tvRole.text = roleText
                     tvUserId.text = "ID: ${it.id}"
 
-                    btnEditProfile.visibility = if (it.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
-                        View.VISIBLE
-                    } else {
-                        View.GONE
-                    }
                 }
             }
         }
@@ -80,7 +78,18 @@ class ProfileFragment : Fragment() {
         }
 
         btnEditProfile.setOnClickListener {
-            // TODO: Навигация к редактированию профиля
+            viewLifecycleOwner.lifecycleScope.launch {
+                val currentUser = viewModel.currentUser.value
+                currentUser?.let { user ->
+                    val bundle = Bundle().apply {
+                        putLong("userId", user.id)
+                    }
+                    findNavController().navigate(
+                        R.id.action_profileFragment_to_userFormFragment,
+                        bundle
+                    )
+                }
+            }
         }
     }
 }
