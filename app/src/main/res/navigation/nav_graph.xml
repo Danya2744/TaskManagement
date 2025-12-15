@@ -10,11 +10,6 @@
         android:name="com.example.taskmanagement.presentation.fragments.LoginFragment"
         android:label="Вход"
         tools:layout="@layout/fragment_login">
-        <action
-            android:id="@+id/action_loginFragment_to_taskListFragment"
-            app:destination="@id/taskListFragment"
-            app:popUpTo="@id/loginFragment"
-            app:popUpToInclusive="true" />
     </fragment>
 
     <fragment

@@ -1,91 +1,158 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:background="@drawable/login_background_gradient"
+    android:fitsSystemWindows="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp">
+
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="40dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="TaskManagement"
-            android:textSize="32sp"
+            android:text="Управление задачами"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="48dp" />
+            android:textColor="@color/white"
+            android:letterSpacing="0.02"
+            android:layout_marginBottom="48dp"
+            android:shadowColor="#80000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="4" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Вход в систему"
-            android:textSize="24sp"
-            android:layout_marginBottom="24dp" />
+            android:textSize="20sp"
+            android:textColor="@color/white"
+            android:alpha="0.9"
+            android:layout_marginBottom="40dp" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:errorEnabled="true">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etEmail"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Email или имя пользователя"
-                android:inputType="textEmailAddress" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            app:errorEnabled="true">
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardUseCompatPadding="true">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPassword"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Пароль"
-                android:inputType="textPassword" />
+                android:orientation="vertical"
+                android:padding="28dp">
 
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxStrokeColor="@color/login_input_border"
+                    app:hintTextColor="@color/login_text_secondary"
+                    app:endIconTint="@color/login_text_secondary"
+                    app:hintEnabled="true"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Email"
+                        android:inputType="textEmailAddress"
+                        android:maxLines="1"
+                        android:textColor="@color/login_text_primary"
+                        android:textSize="16sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxStrokeColor="@color/login_input_border"
+                    app:hintTextColor="@color/login_text_secondary"
+                    app:endIconTint="@color/login_text_secondary"
+                    app:hintEnabled="true"
+                    app:endIconMode="password_toggle"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Пароль"
+                        android:inputType="textPassword"
+                        android:maxLines="1"
+                        android:textColor="@color/login_text_primary"
+                        android:textSize="16sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:id="@+id/tvError"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/holo_red_dark"
+            android:textColor="@color/login_error"
             android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:background="@drawable/error_background"
             android:visibility="gone" />
 
         <Button
             android:id="@+id/btnLogin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Войти"
-            android:layout_marginBottom="16dp" />
-
-        <Button
-            android:id="@+id/btnDemo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Демо вход (admin)"
-            android:backgroundTint="@android:color/darker_gray" />
+            android:text="ВОЙТИ"
+            android:textSize="16sp"
+            android:paddingVertical="18dp"
+            android:backgroundTint="@color/login_button_primary"
+            android:textColor="@color/white"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp"
+            android:textAllCaps="true"
+            android:letterSpacing="0.05"
+            style="@style/Widget.MaterialComponents.Button"
+            app:cornerRadius="14dp" />
 
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="16dp"
-            android:visibility="gone" />
+            android:visibility="gone"
+            android:indeterminateTint="@color/white" />
+
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="40dp" />
 
     </LinearLayout>
-
 </ScrollView>

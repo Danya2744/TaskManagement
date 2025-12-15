@@ -14,8 +14,8 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.taskmanagement.R
+import com.example.taskmanagement.presentation.activities.MainActivity
 import com.example.taskmanagement.presentation.viewmodels.UserViewModel
-import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -26,7 +26,6 @@ class LoginFragment : Fragment() {
     private lateinit var etEmail: EditText
     private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
-    private lateinit var btnDemo: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var tvError: TextView
 
@@ -40,7 +39,6 @@ class LoginFragment : Fragment() {
         etEmail = view.findViewById(R.id.etEmail)
         etPassword = view.findViewById(R.id.etPassword)
         btnLogin = view.findViewById(R.id.btnLogin)
-        btnDemo = view.findViewById(R.id.btnDemo)
         progressBar = view.findViewById(R.id.progressBar)
         tvError = view.findViewById(R.id.tvError)
 
@@ -49,6 +47,9 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        (requireActivity() as MainActivity).bottomNavigationView.visibility = View.GONE
+        requireActivity().title = "Управление задачами"
 
         setupClickListeners()
         setupObservers()
@@ -71,10 +72,6 @@ class LoginFragment : Fragment() {
             }
         }
 
-        btnDemo.setOnClickListener {
-            etEmail.setText("admin@company.com")
-            etPassword.setText("admin123")
-        }
     }
 
     private fun setupTextWatchers() {
@@ -134,7 +131,6 @@ class LoginFragment : Fragment() {
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         btnLogin.isEnabled = !show
-        btnDemo.isEnabled = !show
     }
 
     private fun showError(message: String) {
@@ -147,6 +143,7 @@ class LoginFragment : Fragment() {
     }
 
     private fun navigateToTaskList() {
-        findNavController().navigate(R.id.action_loginFragment_to_taskListFragment)
+        (requireActivity() as MainActivity).bottomNavigationView.visibility = View.VISIBLE
+        findNavController().navigate(R.id.taskListFragment)
     }
 }

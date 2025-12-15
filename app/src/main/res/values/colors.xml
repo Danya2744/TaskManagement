@@ -1,13 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorPrimaryLight">#C5CAE9</color>
+    <!-- Основные цвета приложения -->
+    <color name="purple_200">#E1BEE7</color>
+    <color name="purple_500">#9C27B0</color>
+    <color name="purple_700">#7B1FA2</color>
+    <color name="teal_200">#80DEEA</color>
+    <color name="teal_700">#00838F</color>
+    <color name="black">#263238</color> <!-- Темно-синий вместо чистого черного -->
+    <color name="white">#FFFFFF</color>
+
+    <!-- Основная цветовая схема (синяя тема) -->
+    <color name="colorPrimary">#4A6FA5</color> <!-- Приятный синий -->
+    <color name="colorPrimaryDark">#385D8A</color> <!-- Темнее основной -->
+    <color name="colorPrimaryLight">#E8F1FF</color> <!-- Очень светлый фон -->
+
+    <!-- Цвета для экрана входа -->
+    <color name="login_background">#F8FAFF</color> <!-- Очень светлый фон с голубым оттенком -->
+    <color name="login_card_background">#FFFFFF</color>
+    <color name="login_text_primary">#2C3E50</color> <!-- Темно-синий для основного текста -->
+    <color name="login_text_secondary">#6C7A89</color> <!-- Мягкий серый для второстепенного текста -->
+    <color name="login_button_primary">#4A6FA5</color> <!-- Цвет кнопки, совпадает с colorPrimary -->
+    <color name="login_button_text">#FFFFFF</color>
+    <color name="login_input_border">#D1D9E6</color> <!-- Мягкая серая граница -->
+    <color name="login_input_focus">#5D8BF4</color> <!-- Яркий синий при фокусе -->
+    <color name="login_error">#FF6B6B</color> <!-- Мягкий красный для ошибок -->
+    <color name="login_success">#4ECDC4</color> <!-- Приятный бирюзовый для успеха -->
+
+    <!-- Дополнительные улучшенные цвета -->
+    <color name="login_button_hover">#5D8BF4</color> <!-- Более яркий синий при наведении -->
+    <color name="login_shadow">#1A000000</color> <!-- Легкая тень -->
+    <color name="login_divider">#E8E8E8</color> <!-- Разделитель -->
 </resources>
