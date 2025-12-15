@@ -72,13 +72,6 @@ class UserListFragment : Fragment() {
                     putLong("userId", user.id)
                 }
                 findNavController().navigate(R.id.action_userListFragment_to_userDetailFragment, bundle)
-            },
-            onUserDeleted = { user ->
-                if (viewModel.currentUser.value?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
-                    showDeleteConfirmation(user)
-                } else {
-                    showError("Только администратор может удалять пользователей")
-                }
             }
         )
 
@@ -122,13 +115,12 @@ class UserListFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.currentUser.collect { currentUser ->
-                fabAddUser.visibility = if (currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
+                fabAddUser.visibility = if (currentUser?.role ==
+                    com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
                     View.VISIBLE
                 } else {
                     View.GONE
                 }
-
-                userAdapter.setShowDeleteButtons(currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN)
             }
         }
 
@@ -158,20 +150,6 @@ class UserListFragment : Fragment() {
             }
             findNavController().navigate(R.id.action_userListFragment_to_userFormFragment, bundle)
         }
-    }
-
-    private fun showDeleteConfirmation(user: com.example.taskmanagement.data.entities.UserEntity) {
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Удаление пользователя")
-            .setMessage("Вы уверены, что хотите удалить пользователя ${user.getFullName()}?")
-            .setPositiveButton("Удалить") { dialog, _ ->
-                viewModel.deleteUser(user)
-                dialog.dismiss()
-            }
-            .setNegativeButton("Отмена") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
     }
 
     private fun showLoading(show: Boolean) {

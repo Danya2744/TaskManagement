@@ -33,7 +33,6 @@ class UserDetailFragment : Fragment() {
     private lateinit var tvUserId: TextView
     private lateinit var btnEdit: Button
     private lateinit var btnDelete: Button
-    private lateinit var btnBack: Button
 
     private var currentUserId: Long? = null
     private var viewedUserId: Long? = null
@@ -54,7 +53,6 @@ class UserDetailFragment : Fragment() {
         tvUserId = view.findViewById(R.id.tvUserId)
         btnEdit = view.findViewById(R.id.btnEdit)
         btnDelete = view.findViewById(R.id.btnDelete)
-        btnBack = view.findViewById(R.id.btnBack)
 
         return view
     }
@@ -100,18 +98,14 @@ class UserDetailFragment : Fragment() {
         tvName.text = user.getFullName()
         tvEmail.text = "Email: ${user.email}"
         tvUsername.text = "Имя пользователя: ${user.username}"
-
         val roleText = when (user.role) {
             UserEntity.Role.ADMIN -> "Администратор"
             UserEntity.Role.USER -> "Пользователь"
         }
         tvRole.text = "Роль: $roleText"
-
         tvStatus.text = "Статус: ${if (user.isActive) "Активен" else "Неактивен"}"
-
         val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
         tvCreatedAt.text = "Создан: ${dateFormat.format(user.createdAt)}"
-
         tvUserId.text = "ID: ${user.id}"
     }
 
@@ -142,13 +136,8 @@ class UserDetailFragment : Fragment() {
                     Toast.makeText(requireContext(), "Вы не можете удалить свой собственный аккаунт", Toast.LENGTH_LONG).show()
                     return@setOnClickListener
                 }
-
                 showDeleteConfirmation(userId)
             }
-        }
-
-        btnBack.setOnClickListener {
-            findNavController().navigateUp()
         }
     }
 
