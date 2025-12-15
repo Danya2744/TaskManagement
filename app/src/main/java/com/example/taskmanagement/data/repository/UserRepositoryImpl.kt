@@ -7,7 +7,7 @@ import com.example.taskmanagement.domain.repository.UserRepository
 import com.example.taskmanagement.domain.utils.PasswordManager
 import com.example.taskmanagement.domain.utils.PreferencesManager
 import kotlinx.coroutines.flow.Flow
-import java.util.*
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -15,7 +15,6 @@ class UserRepositoryImpl @Inject constructor(
     private val passwordManager: PasswordManager,
     private val preferencesManager: PreferencesManager
 ) : UserRepository {
-
 
     override fun getAllUsers(): Flow<List<UserEntity>> {
         return userDao.getAllUsers()
@@ -35,6 +34,22 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun getUserByUsername(username: String): UserEntity? {
         return userDao.getUserByUsername(username)
+    }
+
+    override fun searchUsers(query: String): Flow<List<UserEntity>> {
+        return userDao.getAllUsers().map { users ->
+            if (query.isBlank()) {
+                users
+            } else {
+                users.filter { user ->
+                    user.getFullName().contains(query, ignoreCase = true) ||
+                            user.email.contains(query, ignoreCase = true) ||
+                            user.username.contains(query, ignoreCase = true) ||
+                            user.firstName.contains(query, ignoreCase = true) ||
+                            user.lastName.contains(query, ignoreCase = true)
+                }
+            }
+        }
     }
 
     override suspend fun createUser(user: UserEntity): Long {

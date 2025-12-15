@@ -16,13 +16,35 @@ class UserViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _users = MutableStateFlow<List<UserEntity>>(emptyList())
-    val users: StateFlow<List<UserEntity>> = _users.asStateFlow()
-
     private val _currentUser = MutableStateFlow<UserEntity?>(null)
-    val currentUser: StateFlow<UserEntity?> = _currentUser.asStateFlow()
-
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
+    private val _searchQuery = MutableStateFlow("")
+
+    val users: StateFlow<List<UserEntity>> = _users.asStateFlow()
+    val currentUser: StateFlow<UserEntity?> = _currentUser.asStateFlow()
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    val filteredUsers: StateFlow<List<UserEntity>> = combine(
+        _users,
+        _searchQuery
+    ) { users, query ->
+        if (query.isBlank()) {
+            users
+        } else {
+            users.filter { user ->
+                user.getFullName().contains(query, ignoreCase = true) ||
+                        user.email.contains(query, ignoreCase = true) ||
+                        user.username.contains(query, ignoreCase = true) ||
+                        user.firstName.contains(query, ignoreCase = true) ||
+                        user.lastName.contains(query, ignoreCase = true)
+            }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     init {
         loadUsers()
@@ -46,6 +68,10 @@ class UserViewModel @Inject constructor(
         viewModelScope.launch {
             _currentUser.value = userRepository.getCurrentUser()
         }
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
     }
 
     fun login(emailOrUsername: String, password: String) {

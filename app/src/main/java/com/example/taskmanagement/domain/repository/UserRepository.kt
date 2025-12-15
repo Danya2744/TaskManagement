@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface UserRepository {
     fun getAllUsers(): Flow<List<UserEntity>>
     fun getUsersByRole(role: UserEntity.Role): Flow<List<UserEntity>>
+    fun searchUsers(query: String): Flow<List<UserEntity>>
     suspend fun getUserById(userId: Long): UserEntity?
     suspend fun getUserByEmail(email: String): UserEntity?
     suspend fun getUserByUsername(username: String): UserEntity?

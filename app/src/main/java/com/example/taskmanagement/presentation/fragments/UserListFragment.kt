@@ -1,9 +1,15 @@
 package com.example.taskmanagement.presentation.fragments
 
+import android.content.Context
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -15,8 +21,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.taskmanagement.R
 import com.example.taskmanagement.presentation.adapters.UserAdapter
 import com.example.taskmanagement.presentation.viewmodels.UserViewModel
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -24,11 +32,13 @@ import kotlinx.coroutines.launch
 class UserListFragment : Fragment() {
 
     private val viewModel: UserViewModel by viewModels()
+
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var fabAddUser: FloatingActionButton
     private lateinit var tvEmptyState: TextView
     private lateinit var userAdapter: UserAdapter
+    private lateinit var etSearch: EditText
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,6 +51,7 @@ class UserListFragment : Fragment() {
         progressBar = view.findViewById(R.id.progressBar)
         fabAddUser = view.findViewById(R.id.fabAddUser)
         tvEmptyState = view.findViewById(R.id.tvEmptyState)
+        etSearch = view.findViewById(R.id.etSearch)
 
         return view
     }
@@ -49,6 +60,7 @@ class UserListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupRecyclerView()
+        setupSearch()
         setupObservers()
         setupClickListeners()
     }
@@ -77,23 +89,32 @@ class UserListFragment : Fragment() {
         }
     }
 
-    private fun showDeleteConfirmation(user: com.example.taskmanagement.data.entities.UserEntity) {
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Удаление пользователя")
-            .setMessage("Вы уверены, что хотите удалить пользователя ${user.getFullName()}?")
-            .setPositiveButton("Удалить") { dialog, _ ->
-                viewModel.deleteUser(user)
-                dialog.dismiss()
+    private fun setupSearch() {
+        etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                viewModel.setSearchQuery(s.toString())
             }
-            .setNegativeButton("Отмена") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        val searchCard = view?.findViewById<MaterialCardView>(R.id.cardSearch)
+        val searchInputLayout = searchCard?.getChildAt(0)?.let {
+            it as? LinearLayout
+        }?.getChildAt(0) as? TextInputLayout
+
+        searchInputLayout?.setEndIconOnClickListener {
+            etSearch.text?.clear()
+            viewModel.setSearchQuery("")
+            hideKeyboard()
+        }
     }
 
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.users.collect { users ->
+            viewModel.filteredUsers.collect { users ->
                 userAdapter.submitList(users)
                 updateEmptyState(users.isEmpty())
             }
@@ -139,6 +160,20 @@ class UserListFragment : Fragment() {
         }
     }
 
+    private fun showDeleteConfirmation(user: com.example.taskmanagement.data.entities.UserEntity) {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Удаление пользователя")
+            .setMessage("Вы уверены, что хотите удалить пользователя ${user.getFullName()}?")
+            .setPositiveButton("Удалить") { dialog, _ ->
+                viewModel.deleteUser(user)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Отмена") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
     }
@@ -150,5 +185,14 @@ class UserListFragment : Fragment() {
     private fun updateEmptyState(isEmpty: Boolean) {
         tvEmptyState.visibility = if (isEmpty) View.VISIBLE else View.GONE
         recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+    }
+
+    private fun hideKeyboard() {
+        val inputMethodManager = requireContext()
+            .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val currentFocus = activity?.currentFocus
+        currentFocus?.let {
+            inputMethodManager.hideSoftInputFromWindow(it.windowToken, 0)
+        }
     }
 }

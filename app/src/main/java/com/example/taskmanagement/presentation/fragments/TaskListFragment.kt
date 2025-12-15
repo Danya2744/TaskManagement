@@ -28,12 +28,10 @@ class TaskListFragment : Fragment() {
     private lateinit var fabAddTask: FloatingActionButton
     private lateinit var tvEmptyState: TextView
     private lateinit var etSearch: EditText
-    private lateinit var btnFilterAll: Button
-    private lateinit var btnFilterCompleted: Button
-    private lateinit var btnFilterPending: Button
-    private lateinit var btnFilterHigh: Button
     private lateinit var tvStatsDetails: TextView
     private lateinit var taskAdapter: TaskAdapter
+    private lateinit var filterDropdown: AutoCompleteTextView
+    private lateinit var filterLayout: com.google.android.material.textfield.TextInputLayout
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,11 +45,9 @@ class TaskListFragment : Fragment() {
         fabAddTask = view.findViewById(R.id.fabAddTask)
         tvEmptyState = view.findViewById(R.id.tvEmptyState)
         etSearch = view.findViewById(R.id.etSearch)
-        btnFilterAll = view.findViewById(R.id.btnFilterAll)
-        btnFilterCompleted = view.findViewById(R.id.btnFilterCompleted)
-        btnFilterPending = view.findViewById(R.id.btnFilterPending)
-        btnFilterHigh = view.findViewById(R.id.btnFilterHigh)
         tvStatsDetails = view.findViewById(R.id.tvStatsDetails)
+        filterDropdown = view.findViewById(R.id.filterDropdown)
+        filterLayout = view.findViewById(R.id.filterLayout)
 
         return view
     }
@@ -60,6 +56,7 @@ class TaskListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupRecyclerView()
+        setupFilterDropdown()
         setupObservers()
         setupClickListeners()
         setupSearch()
@@ -89,6 +86,63 @@ class TaskListFragment : Fragment() {
         }
     }
 
+    private fun setupFilterDropdown() {
+        val filterItems = listOf(
+            "Все задачи",
+            "Выполненные",
+            "Активные",
+            "Высокий приоритет"
+        )
+
+        val filterAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            filterItems
+        )
+
+        filterDropdown.setAdapter(filterAdapter)
+
+        filterDropdown.setOnItemClickListener { _, _, position, _ ->
+            when (position) {
+                0 -> viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.ALL)
+                1 -> viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.COMPLETED)
+                2 -> viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.PENDING)
+                3 -> viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.HIGH_PRIORITY)
+            }
+
+            filterDropdown.clearFocus()
+            hideKeyboard()
+        }
+
+        filterDropdown.setOnClickListener {
+            if (!filterDropdown.isPopupShowing) {
+                filterDropdown.showDropDown()
+            }
+        }
+
+        filterDropdown.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                filterDropdown.showDropDown()
+            }
+        }
+
+        filterDropdown.setText(filterItems[0], false)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.currentFilter.collect { filter ->
+                val selectedText = when (filter) {
+                    com.example.taskmanagement.presentation.viewmodels.TaskFilter.ALL -> filterItems[0]
+                    com.example.taskmanagement.presentation.viewmodels.TaskFilter.COMPLETED -> filterItems[1]
+                    com.example.taskmanagement.presentation.viewmodels.TaskFilter.PENDING -> filterItems[2]
+                    com.example.taskmanagement.presentation.viewmodels.TaskFilter.HIGH_PRIORITY -> filterItems[3]
+                }
+                if (filterDropdown.text.toString() != selectedText) {
+                    filterDropdown.setText(selectedText, false)
+                }
+            }
+        }
+    }
+
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.tasks.collect { tasks ->
@@ -113,12 +167,6 @@ class TaskListFragment : Fragment() {
                 }
             }
         }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.currentFilter.collect { filter ->
-                updateFilterButtons(filter)
-            }
-        }
     }
 
     private fun setupClickListeners() {
@@ -127,22 +175,6 @@ class TaskListFragment : Fragment() {
                 putLong("taskId", -1)
             }
             findNavController().navigate(R.id.action_taskListFragment_to_taskFormFragment, bundle)
-        }
-
-        btnFilterAll.setOnClickListener {
-            viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.ALL)
-        }
-
-        btnFilterCompleted.setOnClickListener {
-            viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.COMPLETED)
-        }
-
-        btnFilterPending.setOnClickListener {
-            viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.PENDING)
-        }
-
-        btnFilterHigh.setOnClickListener {
-            viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.HIGH_PRIORITY)
         }
     }
 
@@ -156,6 +188,17 @@ class TaskListFragment : Fragment() {
 
             override fun afterTextChanged(s: Editable?) {}
         })
+
+        val searchCard = view?.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardSearch)
+        val searchInputLayout = searchCard?.getChildAt(0)?.let {
+            it as? LinearLayout
+        }?.getChildAt(0) as? com.google.android.material.textfield.TextInputLayout
+
+        searchInputLayout?.setEndIconOnClickListener {
+            etSearch.text?.clear()
+            viewModel.setSearchQuery("")
+            hideKeyboard()
+        }
     }
 
     private fun observeStatistics() {
@@ -168,36 +211,11 @@ class TaskListFragment : Fragment() {
         }
     }
 
-    private fun updateFilterButtons(currentFilter: com.example.taskmanagement.presentation.viewmodels.TaskFilter) {
-        val allButtons = listOf(btnFilterAll, btnFilterCompleted, btnFilterPending, btnFilterHigh)
-
-        allButtons.forEach { button ->
-            button.isSelected = false
-            button.setBackgroundResource(android.R.drawable.btn_default)
-        }
-
-        when (currentFilter) {
-            com.example.taskmanagement.presentation.viewmodels.TaskFilter.ALL -> {
-                btnFilterAll.isSelected = true
-                btnFilterAll.setBackgroundResource(R.drawable.bg_filter_selected)
-            }
-            com.example.taskmanagement.presentation.viewmodels.TaskFilter.COMPLETED -> {
-                btnFilterCompleted.isSelected = true
-                btnFilterCompleted.setBackgroundResource(R.drawable.bg_filter_selected)
-            }
-            com.example.taskmanagement.presentation.viewmodels.TaskFilter.PENDING -> {
-                btnFilterPending.isSelected = true
-                btnFilterPending.setBackgroundResource(R.drawable.bg_filter_selected)
-            }
-            com.example.taskmanagement.presentation.viewmodels.TaskFilter.HIGH_PRIORITY -> {
-                btnFilterHigh.isSelected = true
-                btnFilterHigh.setBackgroundResource(R.drawable.bg_filter_selected)
-            }
-        }
-    }
-
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        fabAddTask.isEnabled = !show
+        filterDropdown.isEnabled = !show
+        etSearch.isEnabled = !show
     }
 
     private fun showError(message: String) {
@@ -207,5 +225,21 @@ class TaskListFragment : Fragment() {
     private fun updateEmptyState(isEmpty: Boolean) {
         tvEmptyState.visibility = if (isEmpty) View.VISIBLE else View.GONE
         recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+    }
+
+    private fun hideKeyboard() {
+        val inputMethodManager = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as android.view.inputmethod.InputMethodManager
+        val currentFocus = activity?.currentFocus
+        currentFocus?.let {
+            inputMethodManager.hideSoftInputFromWindow(it.windowToken, 0)
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        filterDropdown.setOnItemClickListener(null)
+        filterDropdown.setOnClickListener(null)
+        filterDropdown.setOnFocusChangeListener(null)
     }
 }
