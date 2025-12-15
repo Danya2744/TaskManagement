@@ -29,12 +29,14 @@ class TaskAdapter(
         holder.bind(task)
     }
 
+
     inner class TaskViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvTitle: TextView = itemView.findViewById(R.id.tvTitle)
         private val tvDescription: TextView = itemView.findViewById(R.id.tvDescription)
         private val tvPriority: TextView = itemView.findViewById(R.id.tvPriority)
         private val tvDueDate: TextView = itemView.findViewById(R.id.tvDueDate)
         private val cbCompleted: CheckBox = itemView.findViewById(R.id.cbCompleted)
+
 
         fun bind(task: TaskEntity) {
             tvTitle.text = task.title
@@ -55,7 +57,6 @@ class TaskAdapter(
 
             cbCompleted.isChecked = task.isCompleted
 
-            // Обработчики кликов
             cbCompleted.setOnCheckedChangeListener { _, isChecked ->
                 onTaskChecked(task, isChecked)
             }

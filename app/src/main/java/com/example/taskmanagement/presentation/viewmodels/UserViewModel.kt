@@ -29,6 +29,10 @@ class UserViewModel @Inject constructor(
         loadCurrentUser()
     }
 
+    suspend fun getUserById(userId: Long): UserEntity? {
+        return userRepository.getUserById(userId)
+    }
+
     private fun loadUsers() {
         viewModelScope.launch {
             userRepository.getAllUsers()
@@ -73,7 +77,7 @@ class UserViewModel @Inject constructor(
             try {
                 userRepository.createUser(user)
                 _authState.value = AuthState.Success
-                loadUsers() // Обновляем список пользователей
+                loadUsers()
             } catch (e: Exception) {
                 _authState.value = AuthState.Error("Failed to create user: ${e.message}")
             }
@@ -87,7 +91,6 @@ class UserViewModel @Inject constructor(
                 userRepository.updateUser(user)
                 _authState.value = AuthState.Success
                 loadUsers()
-                // Если обновили текущего пользователя, перезагружаем его данные
                 if (user.id == _currentUser.value?.id) {
                     loadCurrentUser()
                 }

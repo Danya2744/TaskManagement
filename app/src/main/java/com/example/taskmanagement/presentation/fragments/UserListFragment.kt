@@ -9,12 +9,14 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.taskmanagement.R
 import com.example.taskmanagement.presentation.adapters.UserAdapter
 import com.example.taskmanagement.presentation.viewmodels.UserViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -54,12 +56,16 @@ class UserListFragment : Fragment() {
     private fun setupRecyclerView() {
         userAdapter = UserAdapter(
             onUserClicked = { user ->
-                // TODO: Навигация к деталям пользователя
+                val bundle = Bundle().apply {
+                    putLong("userId", user.id)
+                }
+                findNavController().navigate(R.id.action_userListFragment_to_userDetailFragment, bundle)
             },
             onUserDeleted = { user ->
-                // TODO: Удаление пользователя (только для админа)
                 if (viewModel.currentUser.value?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
-                    viewModel.deleteUser(user)
+                    showDeleteConfirmation(user)
+                } else {
+                    showError("Только администратор может удалять пользователей")
                 }
             }
         )
@@ -69,6 +75,20 @@ class UserListFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             setHasFixedSize(true)
         }
+    }
+
+    private fun showDeleteConfirmation(user: com.example.taskmanagement.data.entities.UserEntity) {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Удаление пользователя")
+            .setMessage("Вы уверены, что хотите удалить пользователя ${user.getFullName()}?")
+            .setPositiveButton("Удалить") { dialog, _ ->
+                viewModel.deleteUser(user)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Отмена") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun setupObservers() {
@@ -81,12 +101,13 @@ class UserListFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.currentUser.collect { currentUser ->
-                // Скрываем FAB если текущий пользователь не админ
                 fabAddUser.visibility = if (currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
                     View.VISIBLE
                 } else {
                     View.GONE
                 }
+
+                userAdapter.setShowDeleteButtons(currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN)
             }
         }
 
@@ -111,7 +132,10 @@ class UserListFragment : Fragment() {
 
     private fun setupClickListeners() {
         fabAddUser.setOnClickListener {
-            // TODO: Навигация к созданию пользователя
+            val bundle = Bundle().apply {
+                putLong("userId", -1)
+            }
+            findNavController().navigate(R.id.action_userListFragment_to_userFormFragment, bundle)
         }
     }
 
@@ -120,7 +144,7 @@ class UserListFragment : Fragment() {
     }
 
     private fun showError(message: String) {
-        // TODO: Показать ошибку через Snackbar
+        Snackbar.make(requireView(), message, Snackbar.LENGTH_LONG).show()
     }
 
     private fun updateEmptyState(isEmpty: Boolean) {

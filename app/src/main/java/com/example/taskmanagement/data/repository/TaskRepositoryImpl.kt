@@ -28,6 +28,10 @@ class TaskRepositoryImpl @Inject constructor(
         return taskDao.getTasksByPriority(priority)
     }
 
+    override suspend fun toggleTaskCompletion(taskId: Long, isCompleted: Boolean) {
+        taskDao.updateTaskCompletion(taskId, isCompleted)
+    }
+
     override fun getTasksByCompletion(isCompleted: Boolean): Flow<List<TaskEntity>> {
         return taskDao.getTasksByCompletion(isCompleted)
     }
@@ -58,10 +62,6 @@ class TaskRepositoryImpl @Inject constructor(
 
     override fun searchTasks(query: String): Flow<List<TaskEntity>> {
         return taskDao.searchTasks(query)
-    }
-
-    override suspend fun toggleTaskCompletion(taskId: Long, isCompleted: Boolean) {
-        taskDao.updateTaskCompletion(taskId, isCompleted)
     }
 
     override suspend fun getTaskStatistics(): TaskStatistics {

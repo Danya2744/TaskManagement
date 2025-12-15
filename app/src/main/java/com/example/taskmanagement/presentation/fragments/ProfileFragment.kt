@@ -63,7 +63,6 @@ class ProfileFragment : Fragment() {
                     tvRole.text = roleText
                     tvUserId.text = "ID: ${it.id}"
 
-                    // Показываем кнопку редактирования только если пользователь админ или это его профиль
                     btnEditProfile.visibility = if (it.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
                         View.VISIBLE
                     } else {
@@ -77,7 +76,6 @@ class ProfileFragment : Fragment() {
     private fun setupClickListeners() {
         btnLogout.setOnClickListener {
             viewModel.logout()
-            // Навигация обратно к экрану логина
             requireActivity().finish()
         }
 

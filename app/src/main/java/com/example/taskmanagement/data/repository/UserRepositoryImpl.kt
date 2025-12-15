@@ -16,6 +16,7 @@ class UserRepositoryImpl @Inject constructor(
     private val preferencesManager: PreferencesManager
 ) : UserRepository {
 
+
     override fun getAllUsers(): Flow<List<UserEntity>> {
         return userDao.getAllUsers()
     }
@@ -58,7 +59,6 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun authenticate(emailOrUsername: String, password: String): AuthResult {
         return try {
-            // Ищем пользователя по email или username
             val user = userDao.getUserByEmail(emailOrUsername)
                 ?: userDao.getUserByUsername(emailOrUsername)
                 ?: return AuthResult.Error("Пользователь не найден")
@@ -67,12 +67,10 @@ class UserRepositoryImpl @Inject constructor(
                 return AuthResult.Error("Аккаунт деактивирован")
             }
 
-            // Проверяем пароль
             if (!passwordManager.verifyPassword(password, user.salt, user.passwordHash)) {
                 return AuthResult.Error("Неверный пароль")
             }
 
-            // Сохраняем ID текущего пользователя
             preferencesManager.saveCurrentUserId(user.id)
             AuthResult.Success(user)
         } catch (e: Exception) {

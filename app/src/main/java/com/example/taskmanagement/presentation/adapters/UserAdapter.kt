@@ -12,6 +12,7 @@ import com.example.taskmanagement.R
 import com.example.taskmanagement.data.entities.UserEntity
 
 class UserAdapter(
+    private var showDeleteButtons: Boolean = false,
     private val onUserClicked: (UserEntity) -> Unit,
     private val onUserDeleted: (UserEntity) -> Unit
 ) : ListAdapter<UserEntity, UserAdapter.UserViewHolder>(UserDiffCallback()) {
@@ -25,6 +26,11 @@ class UserAdapter(
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         val user = getItem(position)
         holder.bind(user)
+    }
+
+    fun setShowDeleteButtons(show: Boolean) {
+        this.showDeleteButtons = show
+        notifyDataSetChanged()
     }
 
     inner class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -43,11 +49,8 @@ class UserAdapter(
             }
             tvRole.text = roleText
 
-            // Показываем кнопку удаления только если пользователь не текущий
-            // TODO: Получить текущего пользователя из ViewModel
-            btnDelete.visibility = View.VISIBLE
+            btnDelete.visibility = if (showDeleteButtons) View.VISIBLE else View.GONE
 
-            // Обработчики кликов
             itemView.setOnClickListener {
                 onUserClicked(user)
             }

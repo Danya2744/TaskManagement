@@ -37,7 +37,6 @@ interface TaskDao {
     @Query("UPDATE tasks SET is_completed = :isCompleted WHERE task_id = :taskId")
     suspend fun updateTaskCompletion(taskId: Long, isCompleted: Boolean)
 
-    // НОВЫЕ ЗАПРОСЫ ДЛЯ УПРАВЛЕНИЯ ЗАДАЧАМИ СОТРУДНИКОВ
     @Query("SELECT * FROM tasks WHERE assigned_to_user_id = :userId")
     fun getTasksAssignedToUser(userId: Long): Flow<List<TaskEntity>>
 
@@ -62,7 +61,6 @@ interface TaskDao {
     @Query("SELECT COUNT(*) FROM tasks")
     suspend fun getTotalTasksCount(): Int
 
-    // Статистика по пользователю
     @Query("SELECT COUNT(*) FROM tasks WHERE assigned_to_user_id = :userId AND is_completed = 1")
     suspend fun getCompletedTasksCountForUser(userId: Long): Int
 

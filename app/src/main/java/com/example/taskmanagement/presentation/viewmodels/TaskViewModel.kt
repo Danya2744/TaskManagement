@@ -95,12 +95,37 @@ class TaskViewModel @Inject constructor(
         }
     }
 
+    // ДОБАВЛЕННЫЙ МЕТОД для обновления задачи
+    fun updateTask(task: TaskEntity) {
+        viewModelScope.launch {
+            _uiState.value = TaskUiState.Loading
+            try {
+                taskRepository.updateTask(task)
+                _uiState.value = TaskUiState.Success
+            } catch (e: Exception) {
+                _uiState.value = TaskUiState.Error(e.message ?: "Failed to update task")
+            }
+        }
+    }
+
     fun updateTaskCompletion(taskId: Long, isCompleted: Boolean) {
         viewModelScope.launch {
             try {
                 taskRepository.toggleTaskCompletion(taskId, isCompleted)
             } catch (e: Exception) {
                 _uiState.value = TaskUiState.Error(e.message ?: "Failed to update task")
+            }
+        }
+    }
+
+    fun deleteTask(task: TaskEntity) {
+        viewModelScope.launch {
+            _uiState.value = TaskUiState.Loading
+            try {
+                taskRepository.deleteTask(task)
+                _uiState.value = TaskUiState.Success
+            } catch (e: Exception) {
+                _uiState.value = TaskUiState.Error(e.message ?: "Failed to delete task")
             }
         }
     }
@@ -125,15 +150,6 @@ class TaskViewModel @Inject constructor(
         return flow {
             while (true) {
                 emit(taskRepository.getTaskStatistics())
-                kotlinx.coroutines.delay(5000) // Обновлять каждые 5 секунд
-            }
-        }.flowOn(kotlinx.coroutines.Dispatchers.IO)
-    }
-
-    fun getUserStatistics(userId: Long): Flow<TaskStatistics> {
-        return flow {
-            while (true) {
-                emit(taskRepository.getUserTaskStatistics(userId))
                 kotlinx.coroutines.delay(5000)
             }
         }.flowOn(kotlinx.coroutines.Dispatchers.IO)

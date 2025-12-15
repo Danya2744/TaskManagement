@@ -26,7 +26,6 @@ class Converters {
         return TaskEntity.Priority.valueOf(priority)
     }
 
-    // НОВЫЕ КОНВЕРТЕРЫ ДЛЯ РОЛИ ПОЛЬЗОВАТЕЛЯ
     @TypeConverter
     fun fromRole(role: UserEntity.Role): String {
         return role.name

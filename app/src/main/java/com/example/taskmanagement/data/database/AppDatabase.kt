@@ -40,7 +40,6 @@ abstract class AppDatabase : RoomDatabase() {
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
-                            // Предзаполнение начальными данными
                             CoroutineScope(Dispatchers.IO).launch {
                                 getInstance(context).prepopulateData()
                             }
@@ -54,7 +53,6 @@ abstract class AppDatabase : RoomDatabase() {
     }
 
     private suspend fun prepopulateData() {
-        // Добавляем категории
         val defaultCategories = listOf(
             CategoryEntity(name = "Работа", color = android.graphics.Color.BLUE, createdAt = Date()),
             CategoryEntity(name = "Личное", color = android.graphics.Color.GREEN, createdAt = Date()),
@@ -63,12 +61,8 @@ abstract class AppDatabase : RoomDatabase() {
         )
         defaultCategories.forEach { categoryDao().insertCategory(it) }
 
-        // Добавляем тестовых пользователей (админ и обычный пользователь)
-        // В реальном приложении пароль должен хешироваться! Здесь для демо - простой текст.
-        // Создаем утилиту для хеширования в следующем этапе.
-        val passwordManager = PasswordManager() // Мы создадим этот класс позже
+        val passwordManager = PasswordManager()
 
-        // Администратор
         val adminSalt = passwordManager.generateSalt()
         val adminHash = passwordManager.hashPassword("admin123", adminSalt)
         val admin = UserEntity(
@@ -84,7 +78,6 @@ abstract class AppDatabase : RoomDatabase() {
         )
         userDao().insertUser(admin)
 
-        // Обычный пользователь
         val userSalt = passwordManager.generateSalt()
         val userHash = passwordManager.hashPassword("user123", userSalt)
         val user = UserEntity(

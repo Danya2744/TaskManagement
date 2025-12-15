@@ -1,15 +1,16 @@
 package com.example.taskmanagement.presentation.fragments
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar
-import android.widget.TextView
+import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.example.taskmanagement.R
 import com.example.taskmanagement.presentation.adapters.TaskAdapter
@@ -26,6 +27,12 @@ class TaskListFragment : Fragment() {
     private lateinit var progressBar: ProgressBar
     private lateinit var fabAddTask: FloatingActionButton
     private lateinit var tvEmptyState: TextView
+    private lateinit var etSearch: EditText
+    private lateinit var btnFilterAll: Button
+    private lateinit var btnFilterCompleted: Button
+    private lateinit var btnFilterPending: Button
+    private lateinit var btnFilterHigh: Button
+    private lateinit var tvStatsDetails: TextView
     private lateinit var taskAdapter: TaskAdapter
 
     override fun onCreateView(
@@ -39,6 +46,12 @@ class TaskListFragment : Fragment() {
         progressBar = view.findViewById(R.id.progressBar)
         fabAddTask = view.findViewById(R.id.fabAddTask)
         tvEmptyState = view.findViewById(R.id.tvEmptyState)
+        etSearch = view.findViewById(R.id.etSearch)
+        btnFilterAll = view.findViewById(R.id.btnFilterAll)
+        btnFilterCompleted = view.findViewById(R.id.btnFilterCompleted)
+        btnFilterPending = view.findViewById(R.id.btnFilterPending)
+        btnFilterHigh = view.findViewById(R.id.btnFilterHigh)
+        tvStatsDetails = view.findViewById(R.id.tvStatsDetails)
 
         return view
     }
@@ -49,6 +62,8 @@ class TaskListFragment : Fragment() {
         setupRecyclerView()
         setupObservers()
         setupClickListeners()
+        setupSearch()
+        observeStatistics()
     }
 
     private fun setupRecyclerView() {
@@ -57,13 +72,19 @@ class TaskListFragment : Fragment() {
                 viewModel.updateTaskCompletion(task.id, isCompleted)
             },
             onTaskClicked = { task ->
-                // TODO: Навигация к деталям задачи
+                val bundle = Bundle().apply {
+                    putLong("taskId", task.id)
+                }
+                findNavController().navigate(
+                    R.id.action_taskListFragment_to_taskDetailFragment,
+                    bundle
+                )
             }
         )
 
         recyclerView.apply {
             adapter = taskAdapter
-            layoutManager = LinearLayoutManager(requireContext())
+            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
             setHasFixedSize(true)
         }
     }
@@ -92,11 +113,86 @@ class TaskListFragment : Fragment() {
                 }
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.currentFilter.collect { filter ->
+                updateFilterButtons(filter)
+            }
+        }
     }
 
     private fun setupClickListeners() {
         fabAddTask.setOnClickListener {
-            findNavController().navigate(R.id.action_taskListFragment_to_createTaskFragment)
+            val bundle = Bundle().apply {
+                putLong("taskId", -1)
+            }
+            findNavController().navigate(R.id.action_taskListFragment_to_taskFormFragment, bundle)
+        }
+
+        btnFilterAll.setOnClickListener {
+            viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.ALL)
+        }
+
+        btnFilterCompleted.setOnClickListener {
+            viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.COMPLETED)
+        }
+
+        btnFilterPending.setOnClickListener {
+            viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.PENDING)
+        }
+
+        btnFilterHigh.setOnClickListener {
+            viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.HIGH_PRIORITY)
+        }
+    }
+
+    private fun setupSearch() {
+        etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                viewModel.setSearchQuery(s.toString())
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+    }
+
+    private fun observeStatistics() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.getStatistics().collect { statistics ->
+                tvStatsDetails.text = "Всего: ${statistics.totalTasks} | " +
+                        "Выполнено: ${statistics.completedTasks} | " +
+                        "Прогресс: ${"%.1f".format(statistics.completionRate)}%"
+            }
+        }
+    }
+
+    private fun updateFilterButtons(currentFilter: com.example.taskmanagement.presentation.viewmodels.TaskFilter) {
+        val allButtons = listOf(btnFilterAll, btnFilterCompleted, btnFilterPending, btnFilterHigh)
+
+        allButtons.forEach { button ->
+            button.isSelected = false
+            button.setBackgroundResource(android.R.drawable.btn_default)
+        }
+
+        when (currentFilter) {
+            com.example.taskmanagement.presentation.viewmodels.TaskFilter.ALL -> {
+                btnFilterAll.isSelected = true
+                btnFilterAll.setBackgroundResource(R.drawable.bg_filter_selected)
+            }
+            com.example.taskmanagement.presentation.viewmodels.TaskFilter.COMPLETED -> {
+                btnFilterCompleted.isSelected = true
+                btnFilterCompleted.setBackgroundResource(R.drawable.bg_filter_selected)
+            }
+            com.example.taskmanagement.presentation.viewmodels.TaskFilter.PENDING -> {
+                btnFilterPending.isSelected = true
+                btnFilterPending.setBackgroundResource(R.drawable.bg_filter_selected)
+            }
+            com.example.taskmanagement.presentation.viewmodels.TaskFilter.HIGH_PRIORITY -> {
+                btnFilterHigh.isSelected = true
+                btnFilterHigh.setBackgroundResource(R.drawable.bg_filter_selected)
+            }
         }
     }
 
@@ -105,7 +201,7 @@ class TaskListFragment : Fragment() {
     }
 
     private fun showError(message: String) {
-        // TODO: Показать ошибку через Snackbar
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     private fun updateEmptyState(isEmpty: Boolean) {

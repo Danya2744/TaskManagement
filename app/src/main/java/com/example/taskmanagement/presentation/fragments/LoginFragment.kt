@@ -54,7 +54,6 @@ class LoginFragment : Fragment() {
         setupObservers()
         setupTextWatchers()
 
-        // Проверяем, если пользователь уже авторизован
         viewLifecycleOwner.lifecycleScope.launch {
             if (viewModel.currentUser.value != null) {
                 navigateToTaskList()
