@@ -97,7 +97,8 @@
                         android:textStyle="bold"
                         android:layout_marginBottom="12dp"
                         android:paddingBottom="8dp"
-                        android:background="@drawable/divider_horizontal"/>
+                        android:background="@drawable/divider_horizontal"
+                        android:gravity="center"/>
 
                     <LinearLayout
                         android:layout_width="match_parent"

@@ -1,6 +1,8 @@
 package com.example.taskmanagement.presentation.fragments
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,10 +17,12 @@ import com.example.taskmanagement.data.entities.TaskEntity
 import com.example.taskmanagement.presentation.viewmodels.TaskViewModel
 import com.example.taskmanagement.presentation.viewmodels.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+@Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 @AndroidEntryPoint
 class TaskFormFragment : Fragment() {
 
@@ -38,6 +42,7 @@ class TaskFormFragment : Fragment() {
     private lateinit var tvError: TextView
 
     private var selectedDueDate: Date? = null
+    private var selectedTime: Calendar? = null
     private var taskId: Long = -1
     private var isEditMode = false
     private var categories = listOf<Pair<Long, String>>()
@@ -84,33 +89,79 @@ class TaskFormFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        taskViewModel.resetFormState()
+        clearError()
+    }
+
     private fun setupSpinners() {
         val priorities = listOf(
             TaskEntity.Priority.LOW to "Низкий",
             TaskEntity.Priority.MEDIUM to "Средний",
             TaskEntity.Priority.HIGH to "Высокий"
         )
-        val priorityAdapter = ArrayAdapter(
+
+        val priorityAdapter = object : ArrayAdapter<String>(
             requireContext(),
             android.R.layout.simple_spinner_item,
             priorities.map { it.second }
-        )
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.BLACK)
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.BLACK)
+                return view
+            }
+        }
+
         priorityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerPriority.adapter = priorityAdapter
 
-        val categoryAdapter = ArrayAdapter(
+        val categoryAdapter = object : ArrayAdapter<String>(
             requireContext(),
             android.R.layout.simple_spinner_item,
             mutableListOf<String>()
-        )
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.BLACK)
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.BLACK)
+                return view
+            }
+        }
+
         categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCategory.adapter = categoryAdapter
 
-        val userAdapter = ArrayAdapter(
+        val userAdapter = object : ArrayAdapter<String>(
             requireContext(),
             android.R.layout.simple_spinner_item,
             mutableListOf<String>()
-        )
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.BLACK)
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                (view as TextView).setTextColor(Color.BLACK)
+                return view
+            }
+        }
+
         userAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerAssignedTo.adapter = userAdapter
     }
@@ -122,6 +173,7 @@ class TaskFormFragment : Fragment() {
             3L to "Срочные",
             4L to "Планирование"
         )
+
         updateCategorySpinner()
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -149,6 +201,7 @@ class TaskFormFragment : Fragment() {
     private fun loadTaskData() {
         viewLifecycleOwner.lifecycleScope.launch {
             val taskFullInfo = taskViewModel.getTaskFullInfo(taskId)
+
             taskFullInfo?.let { taskInfo ->
                 etTitle.setText(taskInfo.task.title)
                 etDescription.setText(taskInfo.task.description ?: "")
@@ -158,6 +211,7 @@ class TaskFormFragment : Fragment() {
                     TaskEntity.Priority.MEDIUM -> 1
                     TaskEntity.Priority.HIGH -> 2
                 }
+
                 spinnerPriority.setSelection(priorityIndex)
 
                 val categoryIndex = categories.indexOfFirst { it.first == taskInfo.task.categoryId }
@@ -168,15 +222,31 @@ class TaskFormFragment : Fragment() {
                 val userIndex = if (taskInfo.task.assignedToUserId != null) {
                     users.indexOfFirst { it.first == taskInfo.task.assignedToUserId } + 1
                 } else {
-                    0
+                    val currentUser = userViewModel.currentUser.value
+                    if (currentUser != null) {
+                        val userIndex = users.indexOfFirst { it.first == currentUser.id } + 1
+                        if (userIndex > 0) {
+                            userIndex
+                        } else {
+                            0
+                        }
+                    } else {
+                        0
+                    }
                 }
+
                 if (userIndex >= 0) {
                     spinnerAssignedTo.setSelection(userIndex)
                 }
 
                 selectedDueDate = taskInfo.task.dueDate
                 if (selectedDueDate != null) {
-                    val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                    val calendar = Calendar.getInstance().apply {
+                        time = selectedDueDate!!
+                    }
+                    selectedTime = calendar
+
+                    val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                     btnDueDate.text = dateFormat.format(selectedDueDate)
                 } else {
                     btnDueDate.text = "Установить срок"
@@ -208,6 +278,7 @@ class TaskFormFragment : Fragment() {
         selectedDueDate?.let {
             calendar.time = it
         }
+
         val year = calendar.get(Calendar.YEAR)
         val month = calendar.get(Calendar.MONTH)
         val day = calendar.get(Calendar.DAY_OF_MONTH)
@@ -216,35 +287,79 @@ class TaskFormFragment : Fragment() {
             requireContext(),
             { _, selectedYear, selectedMonth, selectedDay ->
                 calendar.set(selectedYear, selectedMonth, selectedDay)
-                selectedDueDate = calendar.time
-                val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-                btnDueDate.text = dateFormat.format(selectedDueDate)
+
+                showTimePicker(calendar)
             },
             year,
             month,
             day
         )
+
+        datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 1000
+
         datePickerDialog.show()
+    }
+
+    private fun showTimePicker(calendar: Calendar) {
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        val timePickerDialog = TimePickerDialog(
+            requireContext(),
+            { _, selectedHour, selectedMinute ->
+                calendar.set(Calendar.HOUR_OF_DAY, selectedHour)
+                calendar.set(Calendar.MINUTE, selectedMinute)
+
+                selectedDueDate = calendar.time
+                selectedTime = calendar
+
+                val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+                btnDueDate.text = dateFormat.format(selectedDueDate)
+            },
+            hour,
+            minute,
+            true
+        )
+
+        timePickerDialog.setTitle("Выберите время")
+        timePickerDialog.show()
+    }
+
+    private fun validateTaskInput(
+        title: String,
+        selectedCategoryIndex: Int
+    ): Boolean {
+        if (title.isBlank()) {
+            showError("Введите название задачи")
+            return false
+        }
+
+        if (selectedCategoryIndex < 0 || categories.isEmpty()) {
+            showError("Выберите категорию")
+            return false
+        }
+
+        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
+        if (selectedUserIndex <= 0) {
+            showError("Необходимо назначить задачу пользователю")
+            return false
+        }
+
+        return true
     }
 
     private fun createTask() {
         val title = etTitle.text.toString()
         val description = etDescription.text.toString()
 
-        if (title.isBlank()) {
-            showError("Введите название задачи")
+        val selectedCategoryIndex = spinnerCategory.selectedItemPosition
+        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
+
+        if (!validateTaskInput(title, selectedCategoryIndex)) {
             return
         }
 
         val selectedPriorityIndex = spinnerPriority.selectedItemPosition
-        val selectedCategoryIndex = spinnerCategory.selectedItemPosition
-        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
-
-        if (selectedCategoryIndex < 0 || categories.isEmpty()) {
-            showError("Выберите категорию")
-            return
-        }
-
         val priority = when (selectedPriorityIndex) {
             0 -> TaskEntity.Priority.LOW
             1 -> TaskEntity.Priority.MEDIUM
@@ -253,13 +368,27 @@ class TaskFormFragment : Fragment() {
         }
 
         val categoryId = categories[selectedCategoryIndex].first
+
         val assignedToUserId = if (selectedUserIndex > 0 && users.isNotEmpty()) {
             users[selectedUserIndex - 1].first
-        } else null
+        } else {
+            showError("Необходимо назначить задачу пользователю")
+            return
+        }
 
         val currentUser = userViewModel.currentUser.value
         if (currentUser == null) {
             showError("Пользователь не авторизован")
+            return
+        }
+
+        if (selectedDueDate == null) {
+            showError("Необходимо установить срок выполнения задачи")
+            return
+        }
+
+        if (selectedDueDate!!.before(Date())) {
+            showError("Срок выполнения не может быть в прошлом")
             return
         }
 
@@ -278,20 +407,14 @@ class TaskFormFragment : Fragment() {
         val title = etTitle.text.toString()
         val description = etDescription.text.toString()
 
-        if (title.isBlank()) {
-            showError("Введите название задачи")
+        val selectedCategoryIndex = spinnerCategory.selectedItemPosition
+        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
+
+        if (!validateTaskInput(title, selectedCategoryIndex)) {
             return
         }
 
         val selectedPriorityIndex = spinnerPriority.selectedItemPosition
-        val selectedCategoryIndex = spinnerCategory.selectedItemPosition
-        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
-
-        if (selectedCategoryIndex < 0 || categories.isEmpty()) {
-            showError("Выберите категорию")
-            return
-        }
-
         val priority = when (selectedPriorityIndex) {
             0 -> TaskEntity.Priority.LOW
             1 -> TaskEntity.Priority.MEDIUM
@@ -300,61 +423,122 @@ class TaskFormFragment : Fragment() {
         }
 
         val categoryId = categories[selectedCategoryIndex].first
+
         val assignedToUserId = if (selectedUserIndex > 0 && users.isNotEmpty()) {
             users[selectedUserIndex - 1].first
-        } else null
+        } else {
+            showError("Необходимо назначить задачу пользователю")
+            return
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             val taskFullInfo = taskViewModel.getTaskFullInfo(taskId)
+
             taskFullInfo?.let { taskInfo ->
+                val dueDateToUse = if (selectedDueDate != null) {
+                    if (selectedDueDate!!.before(Date())) {
+                        showError("Срок выполнения не может быть в прошлом")
+                        return@launch
+                    }
+                    selectedDueDate
+                } else {
+                    taskInfo.task.dueDate
+                }
+
                 val updatedTask = taskInfo.task.copy(
                     title = title,
                     description = if (description.isBlank()) null else description,
                     priority = priority,
                     categoryId = categoryId,
                     assignedToUserId = assignedToUserId,
-                    dueDate = selectedDueDate,
+                    dueDate = dueDateToUse,
                     updatedAt = Date()
                 )
+
                 taskViewModel.updateTask(updatedTask)
+            } ?: run {
+                showError("Задача не найдена")
             }
         }
     }
 
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
-            taskViewModel.uiState.collect { state ->
+            taskViewModel.formState.collect { state ->
                 when (state) {
-                    is com.example.taskmanagement.presentation.viewmodels.TaskUiState.Loading -> {
+                    is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Loading -> {
                         showLoading(true)
                         clearError()
                     }
-                    is com.example.taskmanagement.presentation.viewmodels.TaskUiState.Success -> {
+                    is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Success -> {
                         showLoading(false)
-                        findNavController().navigateUp()
+                        showSuccess(state.message)
+
+                        if (!isEditMode) {
+                            lifecycleScope.launch {
+                                delay(1500)
+                                resetForm()
+                                clearError()
+                            }
+                        } else {
+                            lifecycleScope.launch {
+                                delay(2000)
+                                clearError()
+                            }
+                        }
+
+                        taskViewModel.resetFormState()
                     }
-                    is com.example.taskmanagement.presentation.viewmodels.TaskUiState.Error -> {
+                    is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Error -> {
                         showLoading(false)
                         showError(state.message)
                     }
-                    else -> showLoading(false)
+                    is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Idle -> {
+                        showLoading(false)
+                        clearError()
+                    }
                 }
             }
         }
+    }
+
+    private fun resetForm() {
+        etTitle.text?.clear()
+        etDescription.text?.clear()
+        spinnerPriority.setSelection(0)
+        spinnerCategory.setSelection(0)
+        spinnerAssignedTo.setSelection(0)
+        selectedDueDate = null
+        selectedTime = null
+        btnDueDate.text = "Установить срок"
     }
 
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         btnSave.isEnabled = !show
         btnCancel.isEnabled = !show
+        btnDueDate.isEnabled = !show
+        spinnerPriority.isEnabled = !show
+        spinnerCategory.isEnabled = !show
+        spinnerAssignedTo.isEnabled = !show
+        etTitle.isEnabled = !show
+        etDescription.isEnabled = !show
     }
 
     private fun showError(message: String) {
+        tvError.setTextColor(resources.getColor(R.color.login_error, null))
+        tvError.text = message
+        tvError.visibility = View.VISIBLE
+    }
+
+    private fun showSuccess(message: String) {
+        tvError.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
         tvError.text = message
         tvError.visibility = View.VISIBLE
     }
 
     private fun clearError() {
         tvError.visibility = View.GONE
+        tvError.text = ""
     }
 }

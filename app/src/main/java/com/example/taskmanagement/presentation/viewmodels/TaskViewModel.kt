@@ -7,8 +7,8 @@ import com.example.taskmanagement.data.entities.TaskFullInfo
 import com.example.taskmanagement.domain.repository.TaskRepository
 import com.example.taskmanagement.domain.repository.TaskStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,7 +19,7 @@ class TaskViewModel @Inject constructor(
     private val _tasks = MutableStateFlow<List<TaskEntity>>(emptyList())
     val tasks: StateFlow<List<TaskEntity>> = _tasks.asStateFlow()
 
-    private val _uiState = MutableStateFlow<TaskUiState>(TaskUiState.Loading)
+    private val _uiState = MutableStateFlow<TaskUiState>(TaskUiState.Idle)
     val uiState: StateFlow<TaskUiState> = _uiState.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
@@ -27,6 +27,9 @@ class TaskViewModel @Inject constructor(
 
     private val _currentFilter = MutableStateFlow<TaskFilter>(TaskFilter.ALL)
     val currentFilter: StateFlow<TaskFilter> = _currentFilter.asStateFlow()
+
+    private val _formState = MutableStateFlow<TaskFormState>(TaskFormState.Idle)
+    val formState: StateFlow<TaskFormState> = _formState.asStateFlow()
 
     init {
         loadTasks()
@@ -74,7 +77,7 @@ class TaskViewModel @Inject constructor(
         dueDate: java.util.Date?
     ) {
         viewModelScope.launch {
-            _uiState.value = TaskUiState.Loading
+            _formState.value = TaskFormState.Loading
             try {
                 val task = TaskEntity(
                     title = title,
@@ -87,23 +90,29 @@ class TaskViewModel @Inject constructor(
                     createdAt = java.util.Date(),
                     updatedAt = java.util.Date()
                 )
+
                 taskRepository.createTask(task)
-                _uiState.value = TaskUiState.Success
+                _formState.value = TaskFormState.Success("Задача создана успешно")
+
+                loadTasks()
+
             } catch (e: Exception) {
-                _uiState.value = TaskUiState.Error(e.message ?: "Failed to create task")
+                _formState.value = TaskFormState.Error(e.message ?: "Не удалось создать задачу")
             }
         }
     }
 
-    // ДОБАВЛЕННЫЙ МЕТОД для обновления задачи
     fun updateTask(task: TaskEntity) {
         viewModelScope.launch {
-            _uiState.value = TaskUiState.Loading
+            _formState.value = TaskFormState.Loading
             try {
                 taskRepository.updateTask(task)
-                _uiState.value = TaskUiState.Success
+                _formState.value = TaskFormState.Success("Задача обновлена успешно")
+
+                loadTasks()
+
             } catch (e: Exception) {
-                _uiState.value = TaskUiState.Error(e.message ?: "Failed to update task")
+                _formState.value = TaskFormState.Error(e.message ?: "Не удалось обновить задачу")
             }
         }
     }
@@ -150,20 +159,32 @@ class TaskViewModel @Inject constructor(
         return flow {
             while (true) {
                 emit(taskRepository.getTaskStatistics())
-                kotlinx.coroutines.delay(5000)
+                delay(5000)
             }
-        }.flowOn(kotlinx.coroutines.Dispatchers.IO)
+        }.flowOn(Dispatchers.IO)
     }
 
     suspend fun getTaskFullInfo(taskId: Long): TaskFullInfo? {
         return taskRepository.getTaskFullInfo(taskId)
     }
+
+    fun resetFormState() {
+        _formState.value = TaskFormState.Idle
+    }
 }
 
 sealed class TaskUiState {
+    object Idle : TaskUiState()
     object Loading : TaskUiState()
     object Success : TaskUiState()
     data class Error(val message: String) : TaskUiState()
+}
+
+sealed class TaskFormState {
+    object Idle : TaskFormState()
+    object Loading : TaskFormState()
+    data class Success(val message: String) : TaskFormState()
+    data class Error(val message: String) : TaskFormState()
 }
 
 enum class TaskFilter {

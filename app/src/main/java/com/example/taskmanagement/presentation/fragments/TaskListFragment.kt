@@ -164,6 +164,8 @@ class TaskListFragment : Fragment() {
                         showLoading(false)
                         showError(state.message)
                     }
+
+                    else -> {}
                 }
             }
         }

@@ -111,9 +111,8 @@ class UserDetailFragment : Fragment() {
 
     private fun updateButtonsVisibility(currentUser: UserEntity?) {
         if (currentUser?.role == UserEntity.Role.ADMIN) {
-            val isSelf = viewedUserId == currentUserId
             btnEdit.visibility = View.VISIBLE
-            btnDelete.visibility = if (!isSelf) View.VISIBLE else View.GONE
+            btnDelete.visibility = View.VISIBLE
         } else {
             btnEdit.visibility = View.GONE
             btnDelete.visibility = View.GONE
