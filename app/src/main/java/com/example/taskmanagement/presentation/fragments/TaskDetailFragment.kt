@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -39,6 +40,8 @@ class TaskDetailFragment : Fragment() {
     private lateinit var btnEdit: Button
     private lateinit var btnDelete: Button
     private lateinit var btnBack: Button
+    private lateinit var scrollView: ScrollView
+    private lateinit var tvStatusText: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -58,6 +61,8 @@ class TaskDetailFragment : Fragment() {
         btnEdit = view.findViewById(R.id.btnEdit)
         btnDelete = view.findViewById(R.id.btnDelete)
         btnBack = view.findViewById(R.id.btnBack)
+        scrollView = view.findViewById(R.id.scrollView ?: view.findViewById(android.R.id.content))
+        tvStatusText = view.findViewById(R.id.tvStatusText)
 
         return view
     }
@@ -68,6 +73,18 @@ class TaskDetailFragment : Fragment() {
         setupClickListeners()
         loadTask()
         checkUserPermissions()
+
+        setupScrollView()
+    }
+
+    private fun setupScrollView() {
+        scrollView.isVerticalScrollBarEnabled = true
+        scrollView.isSmoothScrollingEnabled = true
+
+        scrollView.post {
+            scrollView.fullScroll(View.FOCUS_DOWN)
+            scrollView.fullScroll(View.FOCUS_UP)
+        }
     }
 
     private fun loadTask() {
@@ -84,21 +101,23 @@ class TaskDetailFragment : Fragment() {
                     TaskEntity.Priority.MEDIUM -> "Средний"
                     TaskEntity.Priority.HIGH -> "Высокий"
                 }
-                tvPriority.text = "Приоритет: $priorityText"
+                tvPriority.text = priorityText
 
-                tvCategory.text = "Категория: ${taskInfo.category.name}"
+                tvCategory.text = taskInfo.category.name
 
                 tvDueDate.text = if (taskInfo.task.dueDate != null) {
-                    val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-                    "Срок: ${dateFormat.format(taskInfo.task.dueDate)}"
+                    val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+                    dateFormat.format(taskInfo.task.dueDate)
                 } else {
-                    "Срок: не установлен"
+                    "не установлен"
                 }
 
-                tvAssignedTo.text = "Назначено: ${taskInfo.assignedTo?.getFullName() ?: "Не назначено"}"
-                tvCreatedBy.text = "Создано: ${taskInfo.createdBy.getFullName()}"
+                tvAssignedTo.text = taskInfo.assignedTo?.getFullName() ?: "Не назначено"
+                tvCreatedBy.text = taskInfo.createdBy.getFullName()
 
                 cbCompleted.isChecked = taskInfo.task.isCompleted
+
+                tvStatusText.text = if (taskInfo.task.isCompleted) "Выполнено" else "В работе"
             }
         }
     }
@@ -127,6 +146,8 @@ class TaskDetailFragment : Fragment() {
         cbCompleted.setOnCheckedChangeListener { _, isChecked ->
             val taskId = arguments?.getLong("taskId") ?: return@setOnCheckedChangeListener
             taskViewModel.updateTaskCompletion(taskId, isChecked)
+
+            tvStatusText.text = if (isChecked) "Выполнено" else "В работе"
         }
 
         btnEdit.setOnClickListener {
