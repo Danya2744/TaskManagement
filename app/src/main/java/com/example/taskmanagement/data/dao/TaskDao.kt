@@ -66,4 +66,7 @@ interface TaskDao {
 
     @Query("SELECT COUNT(*) FROM tasks WHERE assigned_to_user_id = :userId")
     suspend fun getTotalTasksCountForUser(userId: Long): Int
+
+    @Query("SELECT * FROM tasks WHERE assigned_to_user_id = :userId OR created_by_user_id = :userId")
+    fun getTasksForUser(userId: Long): Flow<List<TaskEntity>>
 }

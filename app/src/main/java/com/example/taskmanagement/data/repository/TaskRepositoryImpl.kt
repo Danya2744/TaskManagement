@@ -76,6 +76,10 @@ class TaskRepositoryImpl @Inject constructor(
         )
     }
 
+    override fun getTasksForUser(userId: Long): Flow<List<TaskEntity>> {
+        return taskDao.getTasksForUser(userId)
+    }
+
     override suspend fun getUserTaskStatistics(userId: Long): TaskStatistics {
         val totalTasks = taskDao.getTotalTasksCountForUser(userId)
         val completedTasks = taskDao.getCompletedTasksCountForUser(userId)

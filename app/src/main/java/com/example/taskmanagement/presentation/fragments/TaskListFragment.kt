@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.taskmanagement.R
 import com.example.taskmanagement.presentation.adapters.TaskAdapter
 import com.example.taskmanagement.presentation.viewmodels.TaskViewModel
+import com.example.taskmanagement.presentation.viewmodels.UserViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -22,7 +23,9 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class TaskListFragment : Fragment() {
 
-    private val viewModel: TaskViewModel by viewModels()
+    private val taskViewModel: TaskViewModel by viewModels()
+    private val userViewModel: UserViewModel by viewModels()
+
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var fabAddTask: FloatingActionButton
@@ -66,7 +69,7 @@ class TaskListFragment : Fragment() {
     private fun setupRecyclerView() {
         taskAdapter = TaskAdapter(
             onTaskChecked = { task, isCompleted ->
-                viewModel.updateTaskCompletion(task.id, isCompleted)
+                taskViewModel.updateTaskCompletion(task.id, isCompleted)
             },
             onTaskClicked = { task ->
                 val bundle = Bundle().apply {
@@ -104,12 +107,11 @@ class TaskListFragment : Fragment() {
 
         filterDropdown.setOnItemClickListener { _, _, position, _ ->
             when (position) {
-                0 -> viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.ALL)
-                1 -> viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.COMPLETED)
-                2 -> viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.PENDING)
-                3 -> viewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.HIGH_PRIORITY)
+                0 -> taskViewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.ALL)
+                1 -> taskViewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.COMPLETED)
+                2 -> taskViewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.PENDING)
+                3 -> taskViewModel.setFilter(com.example.taskmanagement.presentation.viewmodels.TaskFilter.HIGH_PRIORITY)
             }
-
             filterDropdown.clearFocus()
             hideKeyboard()
         }
@@ -129,7 +131,7 @@ class TaskListFragment : Fragment() {
         filterDropdown.setText(filterItems[0], false)
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.currentFilter.collect { filter ->
+            taskViewModel.currentFilter.collect { filter ->
                 val selectedText = when (filter) {
                     com.example.taskmanagement.presentation.viewmodels.TaskFilter.ALL -> filterItems[0]
                     com.example.taskmanagement.presentation.viewmodels.TaskFilter.COMPLETED -> filterItems[1]
@@ -145,14 +147,14 @@ class TaskListFragment : Fragment() {
 
     private fun setupObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.tasks.collect { tasks ->
+            taskViewModel.tasks.collect { tasks ->
                 taskAdapter.submitList(tasks)
                 updateEmptyState(tasks.isEmpty())
             }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.uiState.collect { state ->
+            taskViewModel.uiState.collect { state ->
                 when (state) {
                     is com.example.taskmanagement.presentation.viewmodels.TaskUiState.Loading -> {
                         showLoading(true)
@@ -164,7 +166,6 @@ class TaskListFragment : Fragment() {
                         showLoading(false)
                         showError(state.message)
                     }
-
                     else -> {}
                 }
             }
@@ -183,11 +184,9 @@ class TaskListFragment : Fragment() {
     private fun setupSearch() {
         etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                viewModel.setSearchQuery(s.toString())
+                taskViewModel.setSearchQuery(s.toString())
             }
-
             override fun afterTextChanged(s: Editable?) {}
         })
 
@@ -198,14 +197,14 @@ class TaskListFragment : Fragment() {
 
         searchInputLayout?.setEndIconOnClickListener {
             etSearch.text?.clear()
-            viewModel.setSearchQuery("")
+            taskViewModel.setSearchQuery("")
             hideKeyboard()
         }
     }
 
     private fun observeStatistics() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.getStatistics().collect { statistics ->
+            taskViewModel.getStatistics().collect { statistics ->
                 tvStatsDetails.text = "Всего: ${statistics.totalTasks} | " +
                         "Выполнено: ${statistics.completedTasks} | " +
                         "Прогресс: ${"%.1f".format(statistics.completionRate)}%"

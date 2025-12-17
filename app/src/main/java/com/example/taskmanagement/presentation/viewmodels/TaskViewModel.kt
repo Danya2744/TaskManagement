@@ -6,6 +6,7 @@ import com.example.taskmanagement.data.entities.TaskEntity
 import com.example.taskmanagement.data.entities.TaskFullInfo
 import com.example.taskmanagement.domain.repository.TaskRepository
 import com.example.taskmanagement.domain.repository.TaskStatistics
+import com.example.taskmanagement.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TaskViewModel @Inject constructor(
-    private val taskRepository: TaskRepository
+    private val taskRepository: TaskRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _tasks = MutableStateFlow<List<TaskEntity>>(emptyList())
@@ -38,14 +40,30 @@ class TaskViewModel @Inject constructor(
 
     private fun loadTasks() {
         viewModelScope.launch {
-            taskRepository.getAllTasks()
-                .catch { exception ->
-                    _uiState.value = TaskUiState.Error(exception.message ?: "Unknown error")
+            val currentUser = userRepository.getCurrentUser()
+
+            _uiState.value = TaskUiState.Loading
+
+            try {
+                val tasksFlow = if (currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
+                    taskRepository.getAllTasks()
+                } else {
+                    currentUser?.let { user ->
+                        taskRepository.getTasksForUser(user.id)
+                    } ?: flow { emit(emptyList()) }
                 }
-                .collect { taskList ->
-                    _tasks.value = taskList
-                    _uiState.value = TaskUiState.Success
-                }
+
+                tasksFlow
+                    .catch { exception ->
+                        _uiState.value = TaskUiState.Error(exception.message ?: "Unknown error")
+                    }
+                    .collect { taskList ->
+                        _tasks.value = taskList
+                        _uiState.value = TaskUiState.Success
+                    }
+            } catch (e: Exception) {
+                _uiState.value = TaskUiState.Error(e.message ?: "Failed to load tasks")
+            }
         }
     }
 
@@ -55,10 +73,25 @@ class TaskViewModel @Inject constructor(
                 .debounce(300)
                 .distinctUntilChanged()
                 .flatMapLatest { query ->
-                    if (query.isBlank()) {
+                    val currentUser = userRepository.getCurrentUser()
+
+                    val baseFlow = if (currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
                         taskRepository.getAllTasks()
                     } else {
-                        taskRepository.searchTasks(query)
+                        currentUser?.let { user ->
+                            taskRepository.getTasksForUser(user.id)
+                        } ?: flow { emit(emptyList()) }
+                    }
+
+                    if (query.isBlank()) {
+                        baseFlow
+                    } else {
+                        baseFlow.map { tasks ->
+                            tasks.filter { task ->
+                                task.title.contains(query, ignoreCase = true) ||
+                                        (task.description?.contains(query, ignoreCase = true) ?: false)
+                            }
+                        }
                     }
                 }
                 .collect { tasks ->
@@ -90,12 +123,9 @@ class TaskViewModel @Inject constructor(
                     createdAt = java.util.Date(),
                     updatedAt = java.util.Date()
                 )
-
                 taskRepository.createTask(task)
                 _formState.value = TaskFormState.Success("Задача создана успешно")
-
                 loadTasks()
-
             } catch (e: Exception) {
                 _formState.value = TaskFormState.Error(e.message ?: "Не удалось создать задачу")
             }
@@ -108,9 +138,7 @@ class TaskViewModel @Inject constructor(
             try {
                 taskRepository.updateTask(task)
                 _formState.value = TaskFormState.Success("Задача обновлена успешно")
-
                 loadTasks()
-
             } catch (e: Exception) {
                 _formState.value = TaskFormState.Error(e.message ?: "Не удалось обновить задачу")
             }
@@ -133,6 +161,7 @@ class TaskViewModel @Inject constructor(
             try {
                 taskRepository.deleteTask(task)
                 _uiState.value = TaskUiState.Success
+                loadTasks()
             } catch (e: Exception) {
                 _uiState.value = TaskUiState.Error(e.message ?: "Failed to delete task")
             }
@@ -146,19 +175,41 @@ class TaskViewModel @Inject constructor(
     fun setFilter(filter: TaskFilter) {
         _currentFilter.value = filter
         viewModelScope.launch {
+            val currentUser = userRepository.getCurrentUser()
+
+            val baseFlow = if (currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
+                taskRepository.getAllTasks()
+            } else {
+                currentUser?.let { user ->
+                    taskRepository.getTasksForUser(user.id)
+                } ?: flow { emit(emptyList()) }
+            }
+
             when (filter) {
-                TaskFilter.ALL -> taskRepository.getAllTasks().collect { _tasks.value = it }
-                TaskFilter.COMPLETED -> taskRepository.getTasksByCompletion(true).collect { _tasks.value = it }
-                TaskFilter.PENDING -> taskRepository.getTasksByCompletion(false).collect { _tasks.value = it }
-                TaskFilter.HIGH_PRIORITY -> taskRepository.getTasksByPriority(TaskEntity.Priority.HIGH).collect { _tasks.value = it }
+                TaskFilter.ALL -> baseFlow.collect { _tasks.value = it }
+                TaskFilter.COMPLETED -> baseFlow.map { it.filter { task -> task.isCompleted } }
+                    .collect { _tasks.value = it }
+                TaskFilter.PENDING -> baseFlow.map { it.filter { task -> !task.isCompleted } }
+                    .collect { _tasks.value = it }
+                TaskFilter.HIGH_PRIORITY -> baseFlow.map { it.filter { task ->
+                    task.priority == TaskEntity.Priority.HIGH
+                } }.collect { _tasks.value = it }
             }
         }
     }
 
     fun getStatistics(): Flow<TaskStatistics> {
         return flow {
+            val currentUser = userRepository.getCurrentUser()
             while (true) {
-                emit(taskRepository.getTaskStatistics())
+                val statistics = if (currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
+                    taskRepository.getTaskStatistics()
+                } else {
+                    currentUser?.let { user ->
+                        taskRepository.getUserTaskStatistics(user.id)
+                    } ?: TaskStatistics(0, 0, 0.0)
+                }
+                emit(statistics)
                 delay(5000)
             }
         }.flowOn(Dispatchers.IO)

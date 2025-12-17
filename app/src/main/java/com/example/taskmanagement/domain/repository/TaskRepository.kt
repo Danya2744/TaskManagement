@@ -20,6 +20,8 @@ interface TaskRepository {
     suspend fun toggleTaskCompletion(taskId: Long, isCompleted: Boolean)
     suspend fun getTaskStatistics(): TaskStatistics
     suspend fun getUserTaskStatistics(userId: Long): TaskStatistics
+
+    fun getTasksForUser(userId: Long): Flow<List<TaskEntity>>
 }
 
 data class TaskStatistics(
