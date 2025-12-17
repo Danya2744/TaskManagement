@@ -4,6 +4,8 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.graphics.Color
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -77,6 +79,7 @@ class TaskFormFragment : Fragment() {
         isEditMode = taskId != -1L
 
         setupSpinners()
+        setupTextWatchers()
         setupClickListeners()
         setupObservers()
         loadCategoriesAndUsers()
@@ -166,6 +169,96 @@ class TaskFormFragment : Fragment() {
         spinnerAssignedTo.adapter = userAdapter
     }
 
+    private fun setupTextWatchers() {
+        etTitle.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                validateTitleInRealTime(s.toString())
+            }
+        })
+
+        etTitle.addTextChangedListener(object : TextWatcher {
+            private var isFormatting = false
+            private var previousLength = 0
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                previousLength = s?.length ?: 0
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                if (isFormatting || s.isNullOrEmpty()) return
+
+                if (previousLength == 0 && s.length == 1) {
+                    isFormatting = true
+                    val firstChar = s[0]
+                    if (firstChar.isLetter() && firstChar.isLowerCase()) {
+                        s.replace(0, 1, firstChar.uppercaseChar().toString())
+                    }
+                    isFormatting = false
+                }
+            }
+        })
+
+        etDescription.addTextChangedListener(object : TextWatcher {
+            private var isFormatting = false
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                if (isFormatting || s.isNullOrEmpty()) return
+
+                val text = s.toString()
+                val sentences = text.split(Regex("(?<=[.!?])\\s+"))
+
+                if (sentences.size > 1) {
+                    isFormatting = true
+                    var formattedText = ""
+
+                    for (sentence in sentences) {
+                        if (sentence.isNotEmpty()) {
+                            val trimmedSentence = sentence.trim()
+                            if (trimmedSentence.isNotEmpty()) {
+                                val firstChar = trimmedSentence[0]
+                                val formattedSentence = if (firstChar.isLetter() && firstChar.isLowerCase()) {
+                                    firstChar.uppercaseChar() + trimmedSentence.substring(1)
+                                } else {
+                                    trimmedSentence
+                                }
+                                formattedText += formattedSentence + " "
+                            }
+                        }
+                    }
+
+                    s?.replace(0, s.length, formattedText.trim())
+                    isFormatting = false
+                }
+            }
+        })
+    }
+
+    private fun validateTitleInRealTime(title: String) {
+        if (title.length in 1..4) {
+            showTitleHint("Название должно содержать минимум 5 символов")
+        } else {
+            clearTitleHint()
+        }
+    }
+
+    private fun showTitleHint(message: String) {
+        etTitle.error = message
+    }
+
+    private fun clearTitleHint() {
+        etTitle.error = null
+    }
+
     private fun loadCategoriesAndUsers() {
         categories = listOf(
             1L to "Работа",
@@ -201,7 +294,6 @@ class TaskFormFragment : Fragment() {
     private fun loadTaskData() {
         viewLifecycleOwner.lifecycleScope.launch {
             val taskFullInfo = taskViewModel.getTaskFullInfo(taskId)
-
             taskFullInfo?.let { taskInfo ->
                 etTitle.setText(taskInfo.task.title)
                 etDescription.setText(taskInfo.task.description ?: "")
@@ -222,17 +314,7 @@ class TaskFormFragment : Fragment() {
                 val userIndex = if (taskInfo.task.assignedToUserId != null) {
                     users.indexOfFirst { it.first == taskInfo.task.assignedToUserId } + 1
                 } else {
-                    val currentUser = userViewModel.currentUser.value
-                    if (currentUser != null) {
-                        val userIndex = users.indexOfFirst { it.first == currentUser.id } + 1
-                        if (userIndex > 0) {
-                            userIndex
-                        } else {
-                            0
-                        }
-                    } else {
-                        0
-                    }
+                    0
                 }
 
                 if (userIndex >= 0) {
@@ -245,7 +327,6 @@ class TaskFormFragment : Fragment() {
                         time = selectedDueDate!!
                     }
                     selectedTime = calendar
-
                     val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                     btnDueDate.text = dateFormat.format(selectedDueDate)
                 } else {
@@ -269,7 +350,7 @@ class TaskFormFragment : Fragment() {
         }
 
         btnCancel.setOnClickListener {
-            findNavController().navigateUp()
+            navigateBackToTaskList()
         }
     }
 
@@ -287,7 +368,6 @@ class TaskFormFragment : Fragment() {
             requireContext(),
             { _, selectedYear, selectedMonth, selectedDay ->
                 calendar.set(selectedYear, selectedMonth, selectedDay)
-
                 showTimePicker(calendar)
             },
             year,
@@ -296,7 +376,6 @@ class TaskFormFragment : Fragment() {
         )
 
         datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 1000
-
         datePickerDialog.show()
     }
 
@@ -309,10 +388,8 @@ class TaskFormFragment : Fragment() {
             { _, selectedHour, selectedMinute ->
                 calendar.set(Calendar.HOUR_OF_DAY, selectedHour)
                 calendar.set(Calendar.MINUTE, selectedMinute)
-
                 selectedDueDate = calendar.time
                 selectedTime = calendar
-
                 val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                 btnDueDate.text = dateFormat.format(selectedDueDate)
             },
@@ -334,14 +411,13 @@ class TaskFormFragment : Fragment() {
             return false
         }
 
-        if (selectedCategoryIndex < 0 || categories.isEmpty()) {
-            showError("Выберите категорию")
+        if (title.length < 5) {
+            showError("Название должно содержать минимум 5 символов")
             return false
         }
 
-        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
-        if (selectedUserIndex <= 0) {
-            showError("Необходимо назначить задачу пользователю")
+        if (selectedCategoryIndex < 0 || selectedCategoryIndex >= categories.size) {
+            showError("Выберите категорию")
             return false
         }
 
@@ -349,11 +425,9 @@ class TaskFormFragment : Fragment() {
     }
 
     private fun createTask() {
-        val title = etTitle.text.toString()
-        val description = etDescription.text.toString()
-
+        val title = etTitle.text.toString().trim()
+        val description = etDescription.text.toString().trim()
         val selectedCategoryIndex = spinnerCategory.selectedItemPosition
-        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
 
         if (!validateTaskInput(title, selectedCategoryIndex)) {
             return
@@ -369,11 +443,11 @@ class TaskFormFragment : Fragment() {
 
         val categoryId = categories[selectedCategoryIndex].first
 
+        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
         val assignedToUserId = if (selectedUserIndex > 0 && users.isNotEmpty()) {
             users[selectedUserIndex - 1].first
         } else {
-            showError("Необходимо назначить задачу пользователю")
-            return
+            null
         }
 
         val currentUser = userViewModel.currentUser.value
@@ -382,14 +456,11 @@ class TaskFormFragment : Fragment() {
             return
         }
 
-        if (selectedDueDate == null) {
-            showError("Необходимо установить срок выполнения задачи")
-            return
-        }
-
-        if (selectedDueDate!!.before(Date())) {
-            showError("Срок выполнения не может быть в прошлом")
-            return
+        selectedDueDate?.let { dueDate ->
+            if (dueDate.before(Date())) {
+                showError("Срок выполнения не может быть в прошлом")
+                return
+            }
         }
 
         taskViewModel.createTask(
@@ -404,11 +475,9 @@ class TaskFormFragment : Fragment() {
     }
 
     private fun updateTask() {
-        val title = etTitle.text.toString()
-        val description = etDescription.text.toString()
-
+        val title = etTitle.text.toString().trim()
+        val description = etDescription.text.toString().trim()
         val selectedCategoryIndex = spinnerCategory.selectedItemPosition
-        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
 
         if (!validateTaskInput(title, selectedCategoryIndex)) {
             return
@@ -424,16 +493,15 @@ class TaskFormFragment : Fragment() {
 
         val categoryId = categories[selectedCategoryIndex].first
 
+        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
         val assignedToUserId = if (selectedUserIndex > 0 && users.isNotEmpty()) {
             users[selectedUserIndex - 1].first
         } else {
-            showError("Необходимо назначить задачу пользователю")
-            return
+            null
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             val taskFullInfo = taskViewModel.getTaskFullInfo(taskId)
-
             taskFullInfo?.let { taskInfo ->
                 val dueDateToUse = if (selectedDueDate != null) {
                     if (selectedDueDate!!.before(Date())) {
@@ -470,29 +538,27 @@ class TaskFormFragment : Fragment() {
                         showLoading(true)
                         clearError()
                     }
+
                     is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Success -> {
                         showLoading(false)
-                        showSuccess(state.message)
 
-                        if (!isEditMode) {
-                            lifecycleScope.launch {
-                                delay(1500)
-                                resetForm()
-                                clearError()
-                            }
-                        } else {
-                            lifecycleScope.launch {
-                                delay(2000)
-                                clearError()
-                            }
+                        Toast.makeText(
+                            requireContext(),
+                            state.message,
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        lifecycleScope.launch {
+                            delay(1000)
+                            navigateBackToTaskList()
                         }
-
-                        taskViewModel.resetFormState()
                     }
+
                     is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Error -> {
                         showLoading(false)
                         showError(state.message)
                     }
+
                     is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Idle -> {
                         showLoading(false)
                         clearError()
@@ -502,15 +568,10 @@ class TaskFormFragment : Fragment() {
         }
     }
 
-    private fun resetForm() {
-        etTitle.text?.clear()
-        etDescription.text?.clear()
-        spinnerPriority.setSelection(0)
-        spinnerCategory.setSelection(0)
-        spinnerAssignedTo.setSelection(0)
-        selectedDueDate = null
-        selectedTime = null
-        btnDueDate.text = "Установить срок"
+    private fun navigateBackToTaskList() {
+        if (!findNavController().popBackStack()) {
+            findNavController().navigate(R.id.taskListFragment)
+        }
     }
 
     private fun showLoading(show: Boolean) {
@@ -527,12 +588,6 @@ class TaskFormFragment : Fragment() {
 
     private fun showError(message: String) {
         tvError.setTextColor(resources.getColor(R.color.login_error, null))
-        tvError.text = message
-        tvError.visibility = View.VISIBLE
-    }
-
-    private fun showSuccess(message: String) {
-        tvError.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
         tvError.text = message
         tvError.visibility = View.VISIBLE
     }
