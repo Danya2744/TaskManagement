@@ -204,7 +204,11 @@
                         android:background="@android:color/transparent"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="10dp"
-                        android:textColor="@color/login_text_primary" />
+                        android:textColor="@color/login_text_primary"
+                        android:popupBackground="@drawable/spinner_popup_background"
+                        android:dropDownVerticalOffset="4dp"
+                        android:dropDownHorizontalOffset="0dp"
+                        android:dropDownWidth="match_parent" />
                 </com.google.android.material.card.MaterialCardView>
 
                 <TextView
@@ -218,137 +222,118 @@
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="12dp" />
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/tvCurrentPasswordLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Текущий пароль*"
+                    android:textSize="14sp"
+                    android:textColor="@color/login_text_primary"
+                    android:layout_marginBottom="4dp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutCurrentPassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
+                    android:layout_marginBottom="16dp"
+                    android:visibility="gone"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxStrokeColor="@color/login_input_border"
+                    app:hintTextColor="@color/login_text_secondary"
+                    app:endIconTint="@color/login_text_secondary"
+                    app:hintEnabled="false"
+                    app:endIconMode="password_toggle"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-                    <TextView
-                        android:id="@+id/tvCurrentPasswordLabel"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etCurrentPassword"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Текущий пароль"
-                        android:textSize="14sp"
+                        android:inputType="textPassword"
+                        android:maxLines="1"
                         android:textColor="@color/login_text_primary"
-                        android:layout_marginBottom="4dp" />
+                        android:textSize="16sp" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:boxBackgroundMode="outline"
-                        app:boxCornerRadiusTopStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxStrokeColor="@color/login_input_border"
-                        app:hintTextColor="@color/login_text_secondary"
-                        app:endIconTint="@color/login_text_secondary"
-                        app:hintEnabled="false"
-                        app:endIconMode="password_toggle"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etCurrentPassword"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textPassword"
-                            android:maxLines="1"
-                            android:textColor="@color/login_text_primary"
-                            android:textSize="16sp" />
+                <TextView
+                    android:id="@+id/tvNewPasswordLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Новый пароль*"
+                    android:textSize="14sp"
+                    android:textColor="@color/login_text_primary"
+                    android:layout_marginBottom="4dp" />
 
-                    </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
-
-                <LinearLayout
+                <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutNewPassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="visible">
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxStrokeColor="@color/login_input_border"
+                    app:hintTextColor="@color/login_text_secondary"
+                    app:endIconTint="@color/login_text_secondary"
+                    app:hintEnabled="false"
+                    app:endIconMode="password_toggle"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-                    <TextView
-                        android:id="@+id/tvNewPasswordLabel"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etNewPassword"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Новый пароль*"
-                        android:textSize="14sp"
+                        android:inputType="textPassword"
+                        android:maxLines="1"
                         android:textColor="@color/login_text_primary"
-                        android:layout_marginBottom="4dp" />
+                        android:textSize="16sp" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:boxBackgroundMode="outline"
-                        app:boxCornerRadiusTopStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxStrokeColor="@color/login_input_border"
-                        app:hintTextColor="@color/login_text_secondary"
-                        app:endIconTint="@color/login_text_secondary"
-                        app:hintEnabled="false"
-                        app:endIconMode="password_toggle"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etNewPassword"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textPassword"
-                            android:maxLines="1"
-                            android:textColor="@color/login_text_primary"
-                            android:textSize="16sp" />
+                <TextView
+                    android:id="@+id/tvConfirmPasswordLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Подтверждение пароля*"
+                    android:textSize="14sp"
+                    android:textColor="@color/login_text_primary"
+                    android:layout_marginBottom="4dp" />
 
-                    </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
-
-                <LinearLayout
+                <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutConfirmPassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="visible">
+                    android:layout_marginBottom="24dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxStrokeColor="@color/login_input_border"
+                    app:hintTextColor="@color/login_text_secondary"
+                    app:endIconTint="@color/login_text_secondary"
+                    app:hintEnabled="false"
+                    app:endIconMode="password_toggle"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-                    <TextView
-                        android:id="@+id/tvConfirmPasswordLabel"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etConfirmPassword"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Подтверждение пароля*"
-                        android:textSize="14sp"
+                        android:inputType="textPassword"
+                        android:maxLines="1"
                         android:textColor="@color/login_text_primary"
-                        android:layout_marginBottom="4dp" />
+                        android:textSize="16sp" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="24dp"
-                        app:boxBackgroundMode="outline"
-                        app:boxCornerRadiusTopStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxStrokeColor="@color/login_input_border"
-                        app:hintTextColor="@color/login_text_secondary"
-                        app:endIconTint="@color/login_text_secondary"
-                        app:hintEnabled="false"
-                        app:endIconMode="password_toggle"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etConfirmPassword"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textPassword"
-                            android:maxLines="1"
-                            android:textColor="@color/login_text_primary"
-                            android:textSize="16sp" />
-
-                    </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <TextView
                     android:id="@+id/tvError"
