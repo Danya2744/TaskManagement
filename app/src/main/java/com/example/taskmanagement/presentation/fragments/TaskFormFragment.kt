@@ -653,7 +653,7 @@ class TaskFormFragment : Fragment() {
                             Toast.LENGTH_SHORT
                         ).show()
                         lifecycleScope.launch {
-                            delay(1000)
+                            delay(400)
                             navigateBackToTaskList()
                         }
                     }

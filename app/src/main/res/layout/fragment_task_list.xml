@@ -8,77 +8,18 @@
     android:fitsSystemWindows="true">
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardFilterDropdown"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="@android:color/white"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Фильтр:"
-                android:textSize="16sp"
-                android:textColor="@color/login_text_primary"
-                android:layout_marginEnd="12dp" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/filterLayout"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:boxBackgroundColor="@android:color/white"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxStrokeColor="@color/login_input_border"
-                app:endIconMode="dropdown_menu"
-                app:endIconTint="@color/login_text_secondary"
-                app:hintTextColor="@color/login_text_secondary">
-
-                <AutoCompleteTextView
-                    android:id="@+id/filterDropdown"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:textSize="14sp"
-                    android:textColor="@color/login_text_primary"
-                    android:padding="12dp" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardStatistics"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         app:cardCornerRadius="16dp"
         app:cardElevation="6dp"
         app:cardBackgroundColor="@color/colorPrimaryLight"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardFilterDropdown">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"

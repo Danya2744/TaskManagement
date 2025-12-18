@@ -8,8 +8,21 @@ import com.example.taskmanagement.domain.repository.TaskRepository
 import com.example.taskmanagement.domain.repository.TaskStatistics
 import com.example.taskmanagement.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -27,9 +40,6 @@ class TaskViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _currentFilter = MutableStateFlow<TaskFilter>(TaskFilter.ALL)
-    val currentFilter: StateFlow<TaskFilter> = _currentFilter.asStateFlow()
-
     private val _formState = MutableStateFlow<TaskFormState>(TaskFormState.Idle)
     val formState: StateFlow<TaskFormState> = _formState.asStateFlow()
 
@@ -41,9 +51,7 @@ class TaskViewModel @Inject constructor(
     private fun loadTasks() {
         viewModelScope.launch {
             val currentUser = userRepository.getCurrentUser()
-
             _uiState.value = TaskUiState.Loading
-
             try {
                 val tasksFlow = if (currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
                     taskRepository.getAllTasks()
@@ -74,7 +82,6 @@ class TaskViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .flatMapLatest { query ->
                     val currentUser = userRepository.getCurrentUser()
-
                     val baseFlow = if (currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
                         taskRepository.getAllTasks()
                     } else {
@@ -107,7 +114,7 @@ class TaskViewModel @Inject constructor(
         categoryId: Long,
         assignedToUserId: Long?,
         createdByUserId: Long,
-        dueDate: java.util.Date?
+        dueDate: Date?
     ) {
         viewModelScope.launch {
             _formState.value = TaskFormState.Loading
@@ -120,9 +127,10 @@ class TaskViewModel @Inject constructor(
                     categoryId = categoryId,
                     assignedToUserId = assignedToUserId,
                     createdByUserId = createdByUserId,
-                    createdAt = java.util.Date(),
-                    updatedAt = java.util.Date()
+                    createdAt = Date(),
+                    updatedAt = Date()
                 )
+
                 taskRepository.createTask(task)
                 _formState.value = TaskFormState.Success("Задача создана успешно")
                 loadTasks()
@@ -172,32 +180,6 @@ class TaskViewModel @Inject constructor(
         _searchQuery.value = query
     }
 
-    fun setFilter(filter: TaskFilter) {
-        _currentFilter.value = filter
-        viewModelScope.launch {
-            val currentUser = userRepository.getCurrentUser()
-
-            val baseFlow = if (currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN) {
-                taskRepository.getAllTasks()
-            } else {
-                currentUser?.let { user ->
-                    taskRepository.getTasksForUser(user.id)
-                } ?: flow { emit(emptyList()) }
-            }
-
-            when (filter) {
-                TaskFilter.ALL -> baseFlow.collect { _tasks.value = it }
-                TaskFilter.COMPLETED -> baseFlow.map { it.filter { task -> task.isCompleted } }
-                    .collect { _tasks.value = it }
-                TaskFilter.PENDING -> baseFlow.map { it.filter { task -> !task.isCompleted } }
-                    .collect { _tasks.value = it }
-                TaskFilter.HIGH_PRIORITY -> baseFlow.map { it.filter { task ->
-                    task.priority == TaskEntity.Priority.HIGH
-                } }.collect { _tasks.value = it }
-            }
-        }
-    }
-
     fun getStatistics(): Flow<TaskStatistics> {
         return flow {
             val currentUser = userRepository.getCurrentUser()
@@ -209,6 +191,7 @@ class TaskViewModel @Inject constructor(
                         taskRepository.getUserTaskStatistics(user.id)
                     } ?: TaskStatistics(0, 0, 0.0)
                 }
+
                 emit(statistics)
                 delay(5000)
             }
@@ -236,8 +219,4 @@ sealed class TaskFormState {
     object Loading : TaskFormState()
     data class Success(val message: String) : TaskFormState()
     data class Error(val message: String) : TaskFormState()
-}
-
-enum class TaskFilter {
-    ALL, COMPLETED, PENDING, HIGH_PRIORITY
 }
