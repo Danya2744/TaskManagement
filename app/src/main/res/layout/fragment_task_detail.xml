@@ -42,7 +42,6 @@
                     android:paddingVertical="24dp"
                     android:paddingHorizontal="20dp">
 
-                    <!-- Task Status Icon -->
                     <ImageView
                         android:id="@+id/ivTaskIcon"
                         android:layout_width="80dp"
@@ -53,7 +52,6 @@
                         android:src="@drawable/ic_task"
                         android:background="@drawable/bg_role_rounded"/>
 
-                    <!-- Task Title -->
                     <TextView
                         android:id="@+id/tvTitle"
                         android:layout_width="wrap_content"
@@ -66,7 +64,6 @@
                         android:textSize="22sp"
                         android:textStyle="bold"/>
 
-                    <!-- Completion Status -->
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -100,7 +97,6 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Task Details Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -127,7 +123,6 @@
                                 android:textSize="16sp"
                                 android:textStyle="bold"/>
 
-                            <!-- Description -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -155,7 +150,6 @@
                                     android:textSize="14sp"/>
                             </LinearLayout>
 
-                            <!-- Priority -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -183,7 +177,6 @@
                                     android:textSize="13sp"/>
                             </LinearLayout>
 
-                            <!-- Category -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -211,7 +204,6 @@
                                     android:textSize="13sp"/>
                             </LinearLayout>
 
-                            <!-- Due Date -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -239,7 +231,6 @@
                                     android:textSize="13sp"/>
                             </LinearLayout>
 
-                            <!-- Assigned To -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -267,7 +258,6 @@
                                     android:textSize="13sp"/>
                             </LinearLayout>
 
-                            <!-- Created By -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -299,7 +289,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Actions Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardActions"
                 android:layout_width="match_parent"

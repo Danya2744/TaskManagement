@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.taskmanagement.R
 import com.example.taskmanagement.data.entities.TaskEntity
+import com.example.taskmanagement.data.entities.UserEntity
 import com.example.taskmanagement.presentation.viewmodels.TaskViewModel
 import com.example.taskmanagement.presentation.viewmodels.UserViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -49,6 +50,9 @@ class TaskFormFragment : Fragment() {
     private var isEditMode = false
     private var categories = listOf<Pair<Long, String>>()
     private var users = listOf<Pair<Long, String>>()
+    private var currentUserIsAdmin = false
+    private var currentUserId: Long? = null
+    private lateinit var userAdapter: ArrayAdapter<String>
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -82,13 +86,15 @@ class TaskFormFragment : Fragment() {
         setupTextWatchers()
         setupClickListeners()
         setupObservers()
-        loadCategoriesAndUsers()
 
-        if (isEditMode) {
-            tvTitle.text = "Редактировать задачу"
-            loadTaskData()
-        } else {
-            tvTitle.text = "Создать задачу"
+        loadCurrentUserInfo {
+            loadCategoriesAndUsers()
+
+            if (isEditMode) {
+                tvTitle.text = "Редактировать задачу"
+            } else {
+                tvTitle.text = "Создать задачу"
+            }
         }
     }
 
@@ -147,10 +153,10 @@ class TaskFormFragment : Fragment() {
         categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCategory.adapter = categoryAdapter
 
-        val userAdapter = object : ArrayAdapter<String>(
+        userAdapter = object : ArrayAdapter<String>(
             requireContext(),
             android.R.layout.simple_spinner_item,
-            mutableListOf<String>()
+            mutableListOf("Загрузка пользователей...")
         ) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val view = super.getView(position, convertView, parent)
@@ -167,14 +173,26 @@ class TaskFormFragment : Fragment() {
 
         userAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerAssignedTo.adapter = userAdapter
+        spinnerAssignedTo.isEnabled = false
+    }
+
+    private fun loadCurrentUserInfo(onComplete: () -> Unit) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            userViewModel.currentUser.collect { currentUser ->
+                if (currentUser != null) {
+                    currentUserIsAdmin = currentUser.role == UserEntity.Role.ADMIN
+                    currentUserId = currentUser.id
+                    onComplete()
+                    return@collect
+                }
+            }
+        }
     }
 
     private fun setupTextWatchers() {
         etTitle.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
             override fun afterTextChanged(s: Editable?) {
                 validateTitleInRealTime(s.toString())
             }
@@ -189,7 +207,6 @@ class TaskFormFragment : Fragment() {
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
             override fun afterTextChanged(s: Editable?) {
                 if (isFormatting || s.isNullOrEmpty()) return
 
@@ -208,9 +225,7 @@ class TaskFormFragment : Fragment() {
             private var isFormatting = false
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
             override fun afterTextChanged(s: Editable?) {
                 if (isFormatting || s.isNullOrEmpty()) return
 
@@ -271,8 +286,20 @@ class TaskFormFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             userViewModel.users.collect { userList ->
-                users = userList.map { it.id to it.getFullName() }
-                updateUserSpinner()
+                if (userList.isNotEmpty()) {
+                    users = userList.map { it.id to it.getFullName() }
+                    updateUserSpinner()
+
+                    spinnerAssignedTo.isEnabled = true
+
+                    if (isEditMode) {
+                        loadTaskData()
+                    }
+                } else {
+                    userAdapter.clear()
+                    userAdapter.add("Нет пользователей в системе")
+                    userAdapter.notifyDataSetChanged()
+                }
             }
         }
     }
@@ -285,10 +312,34 @@ class TaskFormFragment : Fragment() {
     }
 
     private fun updateUserSpinner() {
-        val adapter = spinnerAssignedTo.adapter as ArrayAdapter<String>
-        adapter.clear()
-        adapter.addAll(listOf("Не назначено") + users.map { it.second })
-        adapter.notifyDataSetChanged()
+        userAdapter.clear()
+
+        if (users.isEmpty()) {
+            userAdapter.add("Нет пользователей в системе")
+            userAdapter.notifyDataSetChanged()
+            return
+        }
+
+        if (currentUserIsAdmin) {
+            userAdapter.addAll(users.map { it.second })
+        } else {
+            val currentUserItem = users.find { it.first == currentUserId }
+            if (currentUserItem != null) {
+                userAdapter.add(currentUserItem.second)
+            } else {
+                userAdapter.add("Текущий пользователь не найден")
+            }
+        }
+
+        userAdapter.notifyDataSetChanged()
+
+        if (!isEditMode) {
+            if (currentUserIsAdmin && users.isNotEmpty()) {
+                spinnerAssignedTo.setSelection(0)
+            } else {
+                spinnerAssignedTo.setSelection(0)
+            }
+        }
     }
 
     private fun loadTaskData() {
@@ -311,14 +362,21 @@ class TaskFormFragment : Fragment() {
                     spinnerCategory.setSelection(categoryIndex)
                 }
 
-                val userIndex = if (taskInfo.task.assignedToUserId != null) {
-                    users.indexOfFirst { it.first == taskInfo.task.assignedToUserId } + 1
+                if (currentUserIsAdmin) {
+                    if (taskInfo.task.assignedToUserId != null && users.isNotEmpty()) {
+                        val userIndex = users.indexOfFirst { it.first == taskInfo.task.assignedToUserId }
+                        if (userIndex >= 0 && userIndex < userAdapter.count) {
+                            spinnerAssignedTo.setSelection(userIndex)
+                        } else if (userAdapter.count > 0) {
+                            spinnerAssignedTo.setSelection(0)
+                        }
+                    } else if (userAdapter.count > 0) {
+                        spinnerAssignedTo.setSelection(0)
+                    }
                 } else {
-                    0
-                }
-
-                if (userIndex >= 0) {
-                    spinnerAssignedTo.setSelection(userIndex)
+                    if (userAdapter.count > 0) {
+                        spinnerAssignedTo.setSelection(0)
+                    }
                 }
 
                 selectedDueDate = taskInfo.task.dueDate
@@ -421,6 +479,29 @@ class TaskFormFragment : Fragment() {
             return false
         }
 
+        if (userAdapter.count == 0) {
+            showError("Нет доступных пользователей для назначения")
+            return false
+        }
+
+        if (!spinnerAssignedTo.isEnabled) {
+            showError("Список пользователей еще не загружен")
+            return false
+        }
+
+        if (spinnerAssignedTo.selectedItemPosition < 0) {
+            showError("Выберите пользователя для назначения")
+            return false
+        }
+
+        val selectedUserText = spinnerAssignedTo.selectedItem as? String
+        if (selectedUserText == null || selectedUserText == "Загрузка пользователей..." ||
+            selectedUserText == "Нет пользователей в системе" ||
+            selectedUserText == "Текущий пользователь не найден") {
+            showError("Некорректный выбор пользователя")
+            return false
+        }
+
         return true
     }
 
@@ -442,17 +523,27 @@ class TaskFormFragment : Fragment() {
         }
 
         val categoryId = categories[selectedCategoryIndex].first
-
         val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
-        val assignedToUserId = if (selectedUserIndex > 0 && users.isNotEmpty()) {
-            users[selectedUserIndex - 1].first
-        } else {
-            null
-        }
 
         val currentUser = userViewModel.currentUser.value
         if (currentUser == null) {
             showError("Пользователь не авторизован")
+            return
+        }
+
+        val assignedToUserId = if (currentUserIsAdmin) {
+            if (selectedUserIndex >= 0 && users.isNotEmpty() && selectedUserIndex < users.size) {
+                users[selectedUserIndex].first
+            } else {
+                showError("Выберите пользователя для назначения задачи")
+                return
+            }
+        } else {
+            currentUser.id
+        }
+
+        if (assignedToUserId == null) {
+            showError("Задача должна быть назначена пользователю")
             return
         }
 
@@ -493,16 +584,32 @@ class TaskFormFragment : Fragment() {
 
         val categoryId = categories[selectedCategoryIndex].first
 
-        val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
-        val assignedToUserId = if (selectedUserIndex > 0 && users.isNotEmpty()) {
-            users[selectedUserIndex - 1].first
-        } else {
-            null
+        val currentUser = userViewModel.currentUser.value
+        if (currentUser == null) {
+            showError("Пользователь не авторизован")
+            return
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             val taskFullInfo = taskViewModel.getTaskFullInfo(taskId)
             taskFullInfo?.let { taskInfo ->
+                val assignedToUserId = if (currentUserIsAdmin) {
+                    val selectedUserIndex = spinnerAssignedTo.selectedItemPosition
+                    if (selectedUserIndex >= 0 && users.isNotEmpty() && selectedUserIndex < users.size) {
+                        users[selectedUserIndex].first
+                    } else {
+                        showError("Выберите пользователя для назначения задачи")
+                        return@launch
+                    }
+                } else {
+                    currentUser.id
+                }
+
+                if (assignedToUserId == null) {
+                    showError("Задача должна быть назначена пользователю")
+                    return@launch
+                }
+
                 val dueDateToUse = if (selectedDueDate != null) {
                     if (selectedDueDate!!.before(Date())) {
                         showError("Срок выполнения не может быть в прошлом")
@@ -538,27 +645,22 @@ class TaskFormFragment : Fragment() {
                         showLoading(true)
                         clearError()
                     }
-
                     is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Success -> {
                         showLoading(false)
-
                         Toast.makeText(
                             requireContext(),
                             state.message,
                             Toast.LENGTH_SHORT
                         ).show()
-
                         lifecycleScope.launch {
                             delay(1000)
                             navigateBackToTaskList()
                         }
                     }
-
                     is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Error -> {
                         showLoading(false)
                         showError(state.message)
                     }
-
                     is com.example.taskmanagement.presentation.viewmodels.TaskFormState.Idle -> {
                         showLoading(false)
                         clearError()
@@ -581,7 +683,7 @@ class TaskFormFragment : Fragment() {
         btnDueDate.isEnabled = !show
         spinnerPriority.isEnabled = !show
         spinnerCategory.isEnabled = !show
-        spinnerAssignedTo.isEnabled = !show
+        spinnerAssignedTo.isEnabled = !show && spinnerAssignedTo.isEnabled
         etTitle.isEnabled = !show
         etDescription.isEnabled = !show
     }

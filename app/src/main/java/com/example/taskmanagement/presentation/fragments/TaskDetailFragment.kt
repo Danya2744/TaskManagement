@@ -14,14 +14,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.taskmanagement.R
 import com.example.taskmanagement.data.entities.TaskEntity
+import com.example.taskmanagement.data.entities.UserEntity
 import com.example.taskmanagement.presentation.viewmodels.TaskViewModel
 import com.example.taskmanagement.presentation.viewmodels.UserViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class TaskDetailFragment : Fragment() {
@@ -72,18 +73,18 @@ class TaskDetailFragment : Fragment() {
 
         setupClickListeners()
         loadTask()
-        checkUserPermissions()
-
         setupScrollView()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            checkUserPermissionsWithRetry()
+        }
     }
 
     private fun setupScrollView() {
         scrollView.isVerticalScrollBarEnabled = true
         scrollView.isSmoothScrollingEnabled = true
-
         scrollView.post {
-            scrollView.fullScroll(View.FOCUS_DOWN)
-            scrollView.fullScroll(View.FOCUS_UP)
+            scrollView.scrollY = 0
         }
     }
 
@@ -113,13 +114,32 @@ class TaskDetailFragment : Fragment() {
                 }
 
                 tvAssignedTo.text = taskInfo.assignedTo?.getFullName() ?: "Не назначено"
-                tvCreatedBy.text = taskInfo.createdBy.getFullName()
+
+                val creatorRoleText = if (taskInfo.createdBy.role == UserEntity.Role.ADMIN) {
+                    " (Администратор)"
+                } else {
+                    " (Пользователь)"
+                }
+                tvCreatedBy.text = "${taskInfo.createdBy.getFullName()}$creatorRoleText"
 
                 cbCompleted.isChecked = taskInfo.task.isCompleted
-
                 tvStatusText.text = if (taskInfo.task.isCompleted) "Выполнено" else "В работе"
             }
         }
+    }
+
+    private suspend fun checkUserPermissionsWithRetry() {
+        var retryCount = 0
+        while (retryCount < 5) {
+            val currentUser = userViewModel.currentUser.value
+            if (currentUser != null) {
+                checkUserPermissions()
+                return
+            }
+            delay(300)
+            retryCount++
+        }
+        checkUserPermissions()
     }
 
     private fun checkUserPermissions() {
@@ -128,16 +148,31 @@ class TaskDetailFragment : Fragment() {
             val taskId = arguments?.getLong("taskId") ?: return@launch
 
             val taskFullInfo = taskViewModel.getTaskFullInfo(taskId)
+
             taskFullInfo?.let { taskInfo ->
-                val canEdit = when {
-                    currentUser?.role == com.example.taskmanagement.data.entities.UserEntity.Role.ADMIN -> true
-                    currentUser?.id == taskInfo.createdBy.id -> true
-                    currentUser?.id == taskInfo.task.assignedToUserId -> true
-                    else -> false
+                var canEdit = false
+
+                if (currentUser == null) {
+                    // Пользователь не авторизован
+                }
+                else if (currentUser.role == UserEntity.Role.ADMIN) {
+                    canEdit = true
+                }
+                else if (currentUser.id == taskInfo.createdBy.id) {
+                    canEdit = true
+                }
+                else if (currentUser.id == taskInfo.task.assignedToUserId) {
+                    if (taskInfo.createdBy.role != UserEntity.Role.ADMIN) {
+                        canEdit = true
+                    }
                 }
 
                 btnEdit.visibility = if (canEdit) View.VISIBLE else View.GONE
                 btnDelete.visibility = if (canEdit) View.VISIBLE else View.GONE
+
+            } ?: run {
+                btnEdit.visibility = View.GONE
+                btnDelete.visibility = View.GONE
             }
         }
     }
@@ -146,7 +181,6 @@ class TaskDetailFragment : Fragment() {
         cbCompleted.setOnCheckedChangeListener { _, isChecked ->
             val taskId = arguments?.getLong("taskId") ?: return@setOnCheckedChangeListener
             taskViewModel.updateTaskCompletion(taskId, isChecked)
-
             tvStatusText.text = if (isChecked) "Выполнено" else "В работе"
         }
 
